@@ -193,7 +193,7 @@ def log_water_metrics_to_csv(water_tracker, start_time):
             ["Smart vs Dumb Usage (L)", f"{water_tracker['smart_total']:.2f} vs {water_tracker['dumb_total']:.2f}", "", "", "", ""],
         ]
         
-        with open(CSV_FILENAME, mode='a', newline='') as file:
+        with open("out/water.csv", mode='a', newline='') as file:
             writer = csv.writer(file)
             for row in metrics_rows:
                 writer.writerow(row)
