@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Monitoring Dashboard</title>
+    <script src="./chart.js"></script>
+    <script src="./papaparse.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .refresh-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-unit {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .stat-change.positive {
+            color: #4CAF50;
+        }
+
+        .stat-change.negative {
+            color: #f44336;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .events-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            grid-column: 1 / -1;
+        }
+
+        .events-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .event-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-time {
+            color: #666;
+            min-width: 150px;
+        }
+
+        .event-type {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 10px;
+        }
+
+        .event-type.water {
+            background: #E3F2FD;
+            color: #1976D2;
+        }
+
+        .event-type.check {
+            background: #F3E5F5;
+            color: #7B1FA2;
+        }
+
+        .event-reason {
+            color: #999;
+            flex: 1;
+            text-align: right;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+        }
+
+        .data-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .summary-value {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🌱 Plant Monitoring Dashboard</h1>
+                <div class="data-summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Total Readings</div>
+                        <div class="summary-value" id="totalReadings">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Water Events</div>
+                        <div class="summary-value" id="waterEvents">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Total Water Used</div>
+                        <div class="summary-value" id="totalWater">0L</div>
+                    </div>
+                </div>
+            </div>
+            <div class="status">
+                <span class="status-dot"></span>
+                <div>
+                    <div>Live Status</div>
+                    <div class="refresh-time">Updates every 10s</div>
+                    <div class="refresh-time" id="lastUpdate">Loading...</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading">Loading data...</div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">📊 Soil Moisture Trends</div>
+                <div class="chart-container">
+                    <canvas id="moistureChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">💧 Smart vs Dumb Sensor Comparison</div>
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="events-card">
+            <div class="events-title">📝 Event Log</div>
+            <div class="event-list" id="eventsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let chartInstances = {
+            moisture: null,
+            comparison: null
+        };
+
+        async function fetchData() {
+            try {
+                const response = await fetch('./main/out/plant_data.csv');
+                if (!response.ok) throw new Error('Failed to fetch CSV');
+                const csvText = await response.text();
+                return Papa.parse(csvText, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true
+                }).data.filter(row => row.Timestamp);
+            } catch (error) {
+                console.error('Fetch error:', error);
+                // Fallback: parse the embedded data
+                return parseEmbeddedData();
+            }
+        }
+
+        function parseEmbeddedData() {
+            // This would be replaced with actual data
+            return [];
+        }
+
+        function updateStats(data) {
+            const statsGrid = document.getElementById('statsGrid');
+            if (data.length === 0) {
+                statsGrid.innerHTML = '<div class="loading">No data available</div>';
+                return;
+            }
+
+            const smartMoisture = data.map(d => d.Soil_Moisture_Smart).filter(v => !isNaN(v));
+            const dumbMoisture = data.map(d => d.Soil_Moisture_Dumb).filter(v => !isNaN(v));
+            const waterEvents = data.filter(d => d.Event_Log === 'WATER_SMART_EVENT');
+
+            const currentSmart = smartMoisture[smartMoisture.length - 1];
+            const currentDumb = dumbMoisture[dumbMoisture.length - 1];
+            const prevSmart = smartMoisture.length > 1 ? smartMoisture[smartMoisture.length - 2] : currentSmart;
+            const prevDumb = dumbMoisture.length > 1 ? dumbMoisture[dumbMoisture.length - 2] : currentDumb;
+
+            const avgSmart = (smartMoisture.reduce((a, b) => a + b, 0) / smartMoisture.length).toFixed(1);
+            const avgDumb = (dumbMoisture.reduce((a, b) => a + b, 0) / dumbMoisture.length).toFixed(1);
+
+            const smartChange = currentSmart - prevSmart;
+            const dumbChange = currentDumb - prevDumb;
+
+            const totalWater = data.reduce((sum, row) => sum + (parseFloat(row.Water_Used_L) || 0), 0).toFixed(2);
+
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Smart Sensor (Current)</div>
+                    <div class="stat-value">${currentSmart.toFixed(1)}%</div>
+                    <div class="stat-unit">Soil Moisture</div>
+                    <div class="stat-change ${smartChange >= 0 ? 'positive' : 'negative'}">
+                        ${smartChange >= 0 ? '▲' : '▼'} ${Math.abs(smartChange).toFixed(2)}% from last reading
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Dumb Sensor (Current)</div>
+                    <div class="stat-value">${currentDumb.toFixed(1)}%</div>
+                    <div class="stat-unit">Soil Moisture</div>
+                    <div class="stat-change ${dumbChange >= 0 ? 'positive' : 'negative'}">
+                        ${dumbChange >= 0 ? '▲' : '▼'} ${Math.abs(dumbChange).toFixed(2)}% from last reading
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Smart Sensor (Average)</div>
+                    <div class="stat-value">${avgSmart}%</div>
+                    <div class="stat-unit">Average Soil Moisture</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Dumb Sensor (Average)</div>
+                    <div class="stat-value">${avgDumb}%</div>
+                    <div class="stat-unit">Average Soil Moisture</div>
+                </div>
+            `;
+
+            // Update summary
+            document.getElementById('totalReadings').textContent = data.length;
+            document.getElementById('waterEvents').textContent = waterEvents.length;
+            document.getElementById('totalWater').textContent = totalWater + 'L';
+        }
+
+        function updateCharts(data) {
+            if (data.length === 0) return;
+
+            const smartMoisture = data.map(d => d.Soil_Moisture_Smart).filter(v => !isNaN(v));
+            const dumbMoisture = data.map(d => d.Soil_Moisture_Dumb).filter(v => !isNaN(v));
+            const labels = data.map(d => new Date(d.Timestamp).toLocaleTimeString()).slice(-20);
+            const recentSmart = smartMoisture.slice(-20);
+            const recentDumb = dumbMoisture.slice(-20);
+
+            // Moisture Chart
+            const moistureCtx = document.getElementById('moistureChart').getContext('2d');
+            if (chartInstances.moisture) chartInstances.moisture.destroy();
+            chartInstances.moisture = new Chart(moistureCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Smart Sensor',
+                            data: recentSmart,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#667eea',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Dumb Sensor',
+                            data: recentDumb,
+                            borderColor: '#764ba2',
+                            backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#764ba2',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { padding: 20 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            max: 100,
+                            ticks: { color: '#666' }
+                        },
+                        x: {
+                            ticks: { color: '#666' }
+                        }
+                    }
+                }
+            });
+
+            // Comparison Chart
+            const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+            if (chartInstances.comparison) chartInstances.comparison.destroy();
+            chartInstances.comparison = new Chart(comparisonCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Smart Sensor',
+                            data: recentSmart,
+                            backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                            borderColor: '#667eea',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Dumb Sensor',
+                            data: recentDumb,
+                            backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                            borderColor: '#764ba2',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            max: 100,
+                            ticks: { color: '#666' }
+                        },
+                        x: {
+                            ticks: { color: '#666' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateEventLog(data) {
+            const eventsList = document.getElementById('eventsList');
+            const waterEvents = data.filter(row => row.Event_Log || row.Water_Event_Reason);
+
+            if (waterEvents.length === 0) {
+                eventsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No events yet</div>';
+                return;
+            }
+
+            eventsList.innerHTML = waterEvents.reverse().map(event => `
+                <div class="event-item">
+                    <div class="event-time">${new Date(event.Timestamp).toLocaleString()}</div>
+                    <div class="event-type ${event.Event_Log === 'WATER_SMART_EVENT' ? 'water' : 'check'}">
+                        ${event.Event_Log || 'Event'}
+                    </div>
+                    <div class="event-reason">
+                        ${event.Water_Event_Reason ? `${event.Water_Event_Reason}` : ''}
+                        ${event.Water_Used_L ? ` (${event.Water_Used_L}L)` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function refreshDashboard() {
+            const data = await fetchData();
+            if (data.length > 0) {
+                updateStats(data);
+                updateCharts(data);
+                updateEventLog(data);
+                document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            }
+        }
+
+        // Initial load
+        refreshDashboard();
+
+        // Refresh every 10 seconds
+        setInterval(refreshDashboard, 10000);
+    </script>
+</body>
+
+</html>

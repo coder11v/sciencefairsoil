@@ -1,0 +1,14 @@
+Timestamp,Soil_Moisture_Smart,Soil_Moisture_Dumb,Event_Log,Water_Event_Reason,Water_Used_L
+2025-12-27 20:19:04,55.13,58.59,Routine Check,,
+2025-12-27 20:19:04,54.29,54.84,Routine Check,,
+2025-12-27 20:19:05,53.68,53.38,Routine Check,,
+2025-12-27 20:19:05,51.82,48.92,Routine Check,,
+2025-12-27 20:19:06,50.09,44.75,Routine Check,,
+2025-12-27 20:19:06,50.04,42.36,Routine Check,,
+2025-12-27 20:19:07,46.42,37.59,Routine Check,,
+2025-12-27 20:19:07,41.91,34.92,Routine Check,,
+2025-12-27 20:19:10,39.97,31.09,WATER_SMART_EVENT,moisture too low on smart,1.0
+2025-12-27 20:19:10,88.51,28.54,Routine Check,,
+2025-12-27 20:19:11,87.72,23.82,Routine Check,,
+2025-12-27 20:19:11,86.17,18.9,Routine Check,,
+2025-12-27 20:19:12,85.15,17.65,Routine Check,,
