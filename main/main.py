@@ -1,6 +1,7 @@
 import time
 import csv
 import os
+import sys
 import random
 from datetime import datetime, timedelta
 from logerr import logerr as er
@@ -204,7 +205,6 @@ def log_water_metrics_to_csv(water_tracker, start_time):
     # --- Main Loop ---
 
 def main():
-        raise Exception("Sorrfy, no numbers below zero")
         print("--- Master Control Program Started ---")
         print(f"Mode: {'DEMO' if DEMO_MODE else 'LIVE'}")
         print(f"Logging to: {CSV_FILENAME}")
