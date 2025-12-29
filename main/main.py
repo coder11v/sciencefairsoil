@@ -1,8 +1,9 @@
 import time
 import csv
 import os
-import random
+ihmport random
 from datetime import datetime, timedelta
+from logerr import logerr as er
 
     # --- Configuration ---
 CSV_FILENAME = 'out/plant_data.csv'
@@ -310,4 +311,14 @@ def main():
             log_water_metrics_to_csv(water_tracker, program_start_time)
 
 if __name__ == "__main__":
+    try:
         main()
+    except KeyboardInterrupt:
+        # Handles Ctrl+C (User stopping the script)
+        print("\nProgram interrupted by user. Exiting...")
+        sys.exit(0)
+    except Exception as e:
+        # Handles any other unexpected errors
+        print(f"An unexpected error occurred: {e}")
+        er.logerr(e)
+        sys.exit(1)
