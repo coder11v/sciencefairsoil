@@ -1,7 +1,7 @@
 import time
 import csv
 import os
-ihmport random
+import random
 from datetime import datetime, timedelta
 from logerr import logerr as er
 
