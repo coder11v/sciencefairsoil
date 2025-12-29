@@ -56552,3 +56552,8 @@ Timestamp,Soil_Moisture_Smart,Soil_Moisture_Dumb,Event_Log,Water_Event_Reason,Wa
 2025-12-28 21:47:24,66.42,76.75,Routine Check,,
 2025-12-28 21:47:24,62.94,74.95,Routine Check,,
 2025-12-28 21:47:25,58.69,74.42,Routine Check,,
+2025-12-28 22:10:19,58.28,57.88,SYSTEM_BOOT,1320h 0m simulated (demo mode),
+2025-12-28 22:10:19,53.63,54.15,Routine Check,,
+2025-12-28 22:10:19,48.76,53.61,Routine Check,,
+2025-12-28 22:10:20,44.74,53.51,Routine Check,,
+2025-12-28 22:10:20,40.67,52.12,Routine Check,,
