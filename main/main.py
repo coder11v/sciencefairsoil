@@ -321,5 +321,5 @@ if __name__ == "__main__":
     except Exception as e:
         # Handles any other unexpected errors
         print(f"An unexpected error occurred: {e}")
-        er.logerr(e)
+        er(e)
         sys.exit(1)
