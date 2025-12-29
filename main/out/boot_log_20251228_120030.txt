@@ -1,0 +1,5 @@
+System Boot Event
+Boot Timestamp: 2025-12-28 12:00:30
+Mode: DEMO (1 real second = 3600 simulation seconds)
+Real Downtime: 15 hours 41 minutes
+Simulated Downtime: 56460 hours 0 minutes
