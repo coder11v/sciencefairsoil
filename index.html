@@ -15,7 +15,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0f1419;
             min-height: 100vh;
             padding: 20px;
         }
@@ -27,7 +27,7 @@
 
         header {
             text-align: center;
-            color: white;
+            color: #e0e0e0;
             margin-bottom: 40px;
         }
 
@@ -44,8 +44,8 @@
         }
 
         .demo-banner {
-            background: rgba(255, 193, 7, 0.95);
-            color: #333;
+            background: rgba(255, 193, 7, 0.15);
+            color: #FFC107;
             padding: 12px 20px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -53,7 +53,8 @@
             display: none;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid #FFC107;
         }
 
         .demo-banner.show {
@@ -65,11 +66,11 @@
         }
 
         .controls {
-            background: white;
+            background: #1a1f26;
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
@@ -84,16 +85,18 @@
 
         label {
             font-weight: 600;
-            color: #333;
+            color: #e0e0e0;
         }
 
         input[type="text"],
         input[type="number"],
         select {
             padding: 10px 15px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #333;
             border-radius: 6px;
             font-size: 1em;
+            background: #252a31;
+            color: #e0e0e0;
             transition: border-color 0.3s;
         }
 
@@ -101,12 +104,12 @@
         input[type="number"]:focus,
         select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4CAF50;
         }
 
         button {
             padding: 10px 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #4CAF50;
             color: white;
             border: none;
             border-radius: 6px;
@@ -117,7 +120,7 @@
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
         }
 
         button:active {
@@ -132,7 +135,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: white;
+            color: rgb(255, 255, 255);
             font-size: 0.9em;
         }
 
@@ -173,6 +176,77 @@
             }
         }
 
+        .refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #252a31;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid #333;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #e0e0e0;
+        }
+
+        .refresh-toggle:hover {
+            border-color: #4CAF50;
+            background: #2a2f36;
+        }
+
+        .refresh-toggle.active {
+            background: rgba(76, 175, 80, 0.1);
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+
+        .refresh-toggle.inactive {
+            background: rgba(244, 67, 54, 0.1);
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        .refresh-icon {
+            font-size: 1.1em;
+        }
+
+        .manual-refresh-btn {
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+        }
+
+        .manual-refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+        }
+
+        .manual-refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        .manual-refresh-btn.refreshing {
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -181,15 +255,15 @@
         }
 
         .stat-card {
-            background: white;
+            background: #1a1f26;
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             text-align: center;
         }
 
         .stat-label {
-            color: #666;
+            color: #999;
             font-size: 0.9em;
             margin-bottom: 8px;
             text-transform: uppercase;
@@ -199,10 +273,7 @@
         .stat-value {
             font-size: 2.5em;
             font-weight: bold;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #4CAF50;
         }
 
         .charts-grid {
@@ -213,23 +284,23 @@
         }
 
         .chart-card {
-            background: white;
+            background: #1a1f26;
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .chart-title {
             font-size: 1.3em;
             font-weight: 600;
-            color: #333;
+            color: #e0e0e0;
             margin-bottom: 20px;
         }
 
         .table-container {
-            background: white;
+            background: #1a1f26;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
 
@@ -239,8 +310,8 @@
         }
 
         thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #252a31;
+            color: #e0e0e0;
         }
 
         th {
@@ -251,11 +322,12 @@
 
         td {
             padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #252a31;
+            color: #e0e0e0;
         }
 
         tbody tr:hover {
-            background-color: #f8f8f8;
+            background-color: #252a31;
         }
 
         .event-water {
@@ -292,9 +364,9 @@
         .page-button {
             padding: 8px 12px;
             margin: 0 5px;
-            background: white;
-            border: 2px solid #667eea;
-            color: #667eea;
+            background: #252a31;
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
@@ -302,13 +374,19 @@
         }
 
         .page-button:hover {
-            background: #667eea;
+            background: #4CAF50;
             color: white;
         }
 
         .page-button.active {
-            background: #667eea;
+            background: #4CAF50;
             color: white;
+        }
+
+        .refresh-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         @media (max-width: 768px) {
@@ -334,6 +412,12 @@
                 width: 100%;
                 justify-content: center;
             }
+
+            .refresh-controls {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
@@ -342,7 +426,7 @@
     <div class="container">
         <header>
             <h1>🌱 Plant Watering Data</h1>
-            <p class="subtitle">Smart Soil Moisture Monitoring System</p>
+            <p class="subtitle">Smart Soil Moisture Monitoring System by Veer Bajaj</p>
             <div class="demo-banner" id="demoBanner">
                 <span class="demo-icon">⚠️</span>
                 <span>Showing demo data - live data file not found</span>
@@ -374,6 +458,17 @@
             <button onclick="downloadData()" title="Download plant data as CSV">
                 📥 Download CSV
             </button>
+            <div class="refresh-controls">
+                <div class="refresh-toggle active" id="refreshToggle" onclick="toggleAutoRefresh()"
+                    title="Click to toggle auto-refresh">
+                    <span class="refresh-icon">⚙️</span>
+                    <span>Auto-Refresh ON</span>
+                </div>
+                <button class="manual-refresh-btn" id="manualRefreshBtn" onclick="manualRefresh()"
+                    title="Refresh data now">
+                    🔄 Refresh
+                </button>
+            </div>
             <div class="status-indicator">
                 <span class="status-dot" id="statusDot"></span>
                 <div>
@@ -441,6 +536,7 @@
         let eventChart = null;
         let isDemoData = false;
         let refreshInterval = null;
+        let autoRefreshEnabled = true;
 
         // Fetch and parse CSV
         async function loadData() {
@@ -727,6 +823,40 @@
             dot.style.background = '#f44336';
         }
 
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const toggle = document.getElementById('refreshToggle');
+
+            if (autoRefreshEnabled) {
+                toggle.classList.remove('inactive');
+                toggle.classList.add('active');
+                toggle.innerHTML = '<span class="refresh-icon">⚙️</span><span>Auto-Refresh ON</span>';
+                startAutoRefresh();
+            } else {
+                toggle.classList.remove('active');
+                toggle.classList.add('inactive');
+                toggle.innerHTML = '<span class="refresh-icon">⏸️</span><span>Auto-Refresh OFF</span>';
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
+            }
+        }
+
+        function manualRefresh() {
+            const btn = document.getElementById('manualRefreshBtn');
+            btn.classList.add('refreshing');
+            setStatusDotLoading();
+
+            loadData().then(() => {
+                btn.classList.remove('refreshing');
+                setStatusDotReady();
+            }).catch(() => {
+                btn.classList.remove('refreshing');
+                setStatusDotError();
+            });
+        }
+
         // Event listeners
         document.getElementById('rowsPerPage').addEventListener('change', (e) => {
             rowsPerPage = parseInt(e.target.value);
@@ -738,6 +868,7 @@
 
         // Refresh every 10 seconds
         function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
             refreshInterval = setInterval(() => {
                 setStatusDotLoading();
                 loadData();
