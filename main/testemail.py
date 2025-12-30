@@ -1,4 +1,4 @@
-from email import send_error_email
+from emailer import send_error_email
 
 
 

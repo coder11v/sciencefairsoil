@@ -6,7 +6,7 @@ import random
 import traceback
 from datetime import datetime, timedelta
 from logerr import logerr as er
-from email import send_error_email
+from emailer import send_error_email
 
     # --- Configuration ---
 CSV_FILENAME = 'out/plant_data.csv'

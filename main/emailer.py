@@ -3,8 +3,8 @@ import smtplib
 import socket
 import traceback
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from emailer.mime.multipart import MIMEMultipart
+from emailer.mime.text import MIMEText
 from pathlib import Path
 
 def send_error_email(error="Unknown Error", recipient_email=None):
