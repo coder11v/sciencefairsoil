@@ -457,6 +457,13 @@
             </div>
             <button onclick="resetFilters()">Reset Filters</button>
             <div class="spacer"></div>
+            <div class="control-group">
+                <label for="dataSource">Data Source:</label>
+                <select id="dataSource">
+                    <option value="live">Live Data (./main/out/)</option>
+                    <option value="demo">Demo Data (./main/out/archive-demo/)</option>
+                </select>
+            </div>
             <button onclick="downloadData()" title="Download plant data as CSV">
                 📥 Download CSV
             </button>
@@ -543,28 +550,25 @@
         // Fetch and parse CSV
         async function loadData() {
             try {
-                // Try to fetch from local file first
-                const response = await fetch('./main/out/plant_data.csv');
+                const dataSource = document.getElementById('dataSource').value;
+                let response;
 
-                if (response.status === 404) {
-                    // Try fallback demo data
-                    const demoResponse = await fetch('./main/out/archive-demo/plant_data.csv');
-                    if (demoResponse.ok) {
-                        isDemoData = true;
-                        document.getElementById('demoBanner').classList.add('show');
-                        const text = await demoResponse.text();
-                        parseCSV(text);
-                    } else {
-                        throw new Error('Both data sources unavailable');
-                    }
-                } else if (response.ok) {
+                if (dataSource === 'demo') {
+                    response = await fetch('./main/out/archive-demo/plant_data.csv');
+                    isDemoData = true;
+                    document.getElementById('demoBanner').classList.add('show');
+                } else {
+                    response = await fetch('./main/out/plant_data.csv');
                     isDemoData = false;
                     document.getElementById('demoBanner').classList.remove('show');
-                    const text = await response.text();
-                    parseCSV(text);
-                } else {
+                }
+
+                if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const text = await response.text();
+                parseCSV(text);
 
                 updateStats();
                 createCharts();
@@ -884,6 +888,11 @@
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (refreshInterval) clearInterval(refreshInterval);
+        });
+
+        document.getElementById('dataSource').addEventListener('change', () => {
+            currentPage = 1;
+            loadData();
         });
     </script>
 </body>
