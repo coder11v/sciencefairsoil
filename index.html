@@ -35,11 +35,42 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         h1 {
             color: #333;
             font-size: 28px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-btn:active {
+            transform: translateY(0);
         }
 
         .status {
@@ -235,6 +266,11 @@
             h1 {
                 font-size: 22px;
             }
+
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
         }
 
         .data-summary {
@@ -284,12 +320,19 @@
                     </div>
                 </div>
             </div>
-            <div class="status">
-                <span class="status-dot"></span>
-                <div>
-                    <div>Live Status</div>
-                    <div class="refresh-time">Updates every 10s</div>
-                    <div class="refresh-time" id="lastUpdate">Loading...</div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="header-actions">
+                    <button class="download-btn" id="downloadBtn" title="Download plant data as CSV">
+                        📥 Download CSV
+                    </button>
+                </div>
+                <div class="status">
+                    <span class="status-dot"></span>
+                    <div>
+                        <div>Live Status</div>
+                        <div class="refresh-time">Updates every 10s</div>
+                        <div class="refresh-time" id="lastUpdate">Loading...</div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -325,6 +368,8 @@
             comparison: null
         };
 
+        let currentData = []; // Store data globally for download
+
         async function fetchData() {
             try {
                 const response = await fetch('./main/out/plant_data.csv');
@@ -345,6 +390,29 @@
         function parseEmbeddedData() {
             // This would be replaced with actual data
             return [];
+        }
+
+        function downloadCSV() {
+            if (currentData.length === 0) {
+                alert('No data available to download');
+                return;
+            }
+
+            // Convert data to CSV format
+            const csv = Papa.unparse(currentData);
+            
+            // Create blob and download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `plant_data_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function updateStats(data) {
@@ -545,12 +613,16 @@
         async function refreshDashboard() {
             const data = await fetchData();
             if (data.length > 0) {
+                currentData = data; // Store for download
                 updateStats(data);
                 updateCharts(data);
                 updateEventLog(data);
                 document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
             }
         }
+
+        // Attach download button listener
+        document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
 
         // Initial load
         refreshDashboard();
