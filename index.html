@@ -460,13 +460,19 @@
             <div class="control-group">
                 <label for="dataSource">Data Source:</label>
                 <select id="dataSource">
-                    <option value="live">Live Data (./main/out/)</option>
-                    <option value="demo">Demo Data (./main/out/archive-demo/)</option>
+                    <option value="live">Live Data</option>
+                    <option value="demo">Demo Data</option>
                 </select>
             </div>
             <button onclick="downloadData()" title="Download plant data as CSV">
                 📥 Download CSV
             </button>
+
+
+
+
+
+
             <div class="refresh-controls">
                 <div class="refresh-toggle active" id="refreshToggle" onclick="toggleAutoRefresh()"
                     title="Click to toggle auto-refresh">
