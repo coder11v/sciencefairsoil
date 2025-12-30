@@ -31,28 +31,28 @@ else:
 
     # --- Hardware Simulation Functions ---
 
-def get_initial_state():
-        """Returns the initial state of the simulated hardware."""
-        return {
+def read_sensors(state=None):
+    """
+    Initializes state on first call, then simulates sensor drift
+    and returns formatted readings.
+    """
+    # Initialize once
+    if state is None:
+        state = {
             'moisture_smart': 60.0,
             'moisture_dumb': 60.0
         }
 
-def read_sensors(state):
-        """
-        Simulates reading sensors by mutating the state with random drift
-        and returning a formatted dictionary for logging.
-        """
-        # Soil naturally dries out over time
-        decay = 0.5 if not DEMO_MODE else 5.0
-        state['moisture_smart'] = max(0, state['moisture_smart'] - random.uniform(0, decay))
-        state['moisture_dumb'] = max(0, state['moisture_dumb'] - random.uniform(0, decay))
+    # Soil naturally dries out over time
+    decay = 0.5 if not DEMO_MODE else 5.0
+    state['moisture_smart'] = max(0, state['moisture_smart'] - random.uniform(0, decay))
+    state['moisture_dumb'] = max(0, state['moisture_dumb'] - random.uniform(0, decay))
 
-        # Return the clean sensor readings
-        return {
-            'Soil_Moisture_Smart': round(state['moisture_smart'], 2),
-            'Soil_Moisture_Dumb': round(state['moisture_dumb'], 2)
-        }
+    return state, {
+        'Soil_Moisture_Smart': round(state['moisture_smart'], 2),
+        'Soil_Moisture_Dumb': round(state['moisture_dumb'], 2)
+    }
+
 
 def run_pump(system_name, state, water_tracker):
         """
@@ -237,7 +237,7 @@ def main():
             print(f"Downtime documentation saved to: {boot_log_file}")
 
         # Initialize simulation state (dictionary instead of class instance)
-        sim_state = get_initial_state()
+        sim_state = None
 
         # Initialize Dumb System timer (pretend we just watered it so it waits for the first cycle)
         last_watered_dumb = datetime.now()
@@ -253,7 +253,7 @@ def main():
         
         # Log system boot event if there was downtime
         if last_log_time is not None:
-            boot_data = read_sensors(sim_state)
+            sim_state, boot_data = read_sensors(sim_state)
             downtime_delta = datetime.now() - last_log_time
             total_seconds = int(downtime_delta.total_seconds())
             downtime_hours = total_seconds // 3600
@@ -274,7 +274,7 @@ def main():
         try:
             while True:
                 # 1. Read Data (passes state to modify it)
-                sensor_data = read_sensors(sim_state)
+                sim_state, sensor_data = read_sensors(sim_state)
                 events = []
                 reasons = []
 
