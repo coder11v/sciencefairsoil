@@ -18,13 +18,13 @@ def reset_out_folder():
             # Check if it is a file or a symbolic link, then delete
             if os.path.isfile(file_path) or os.path.islink(file_path):
                 os.unlink(file_path)
-            # If it is a directory, delete the entire directory tree
+            # If it is a directory, skip it (preserve all folders and their contents)
             elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
+                pass  # Do nothing - preserve the directory and everything in it
         except Exception as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
 
-    print(f"Successfully reset '{target_dir}/' — folder is now empty.")
+    print(f"Successfully reset '{target_dir}/' — all files deleted, folders and their contents preserved.")
 
 if __name__ == "__main__":
     reset_out_folder()

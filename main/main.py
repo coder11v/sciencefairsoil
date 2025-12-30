@@ -3,8 +3,10 @@ import csv
 import os
 import sys
 import random
+import traceback
 from datetime import datetime, timedelta
 from logerr import logerr as er
+from email import send_error_email
 
     # --- Configuration ---
 CSV_FILENAME = 'out/plant_data.csv'
@@ -317,9 +319,13 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         # Handles Ctrl+C (User stopping the script)
         print("\nProgram interrupted by user. Exiting...")
+        send_error_email("User interrupted the program", recipient_email="hi@veerbajaj.com")
         sys.exit(0)
     except Exception as e:
+        
+        tb = traceback.format_exc()  # ← full traceback as a string
         # Handles any other unexpected errors
         print(f"An unexpected error occurred: {e}")
-        er(e)
+        er(e, tb)
+        send_error_email(e, recipient_email="hi@veerbajaj.com")
         sys.exit(1)
