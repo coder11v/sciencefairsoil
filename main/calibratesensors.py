@@ -5,6 +5,7 @@ Author: Veer Bajaj
 Date: 2026-01-02
 
 This script calibrates both capacitive soil moisture sensors in three states:
+1. DRY soil (no water) = 0%
 2. HALF WET soil (moderate moisture) = 50%
 3. FULLY WET soil (saturated) = 100%
 
