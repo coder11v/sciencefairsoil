@@ -1,3 +1,8 @@
+"""
+smart - pump1
+dumb - plant2
+"""
+
 from gpiozero import DigitalOutputDevice
 from time import sleep
 
