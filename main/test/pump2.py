@@ -11,21 +11,24 @@ def run_test():
     pump1.off()
     pump2.off()
     sleep(1)
-
-    print("Running 17... Locking 27 OFF")
+    print("Continue with 17 (smart)? (press enter to continue)")
+    input()
+    print("Running 17 (smart)... Locking 27 OFF")
     # We turn 27 OFF again right before turning 17 ON 
     # to ensure the pin is actively pushing 3.3V
     pump2.off() 
     pump1.on()
-    sleep(5)
+    sleep(1)
     pump1.off()
 
-    sleep(2)
+    sleep(1)
+    print("Continue with 27 (dumb)? (press enter to continue)")
+    input()
 
-    print("Running 27... Locking 17 OFF")
+    print("Running 27 (dumb)... Locking 17 OFF")
     pump1.off()
     pump2.on()
-    sleep(5)
+    sleep(1)
     pump2.off()
 
 try:

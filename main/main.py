@@ -45,24 +45,26 @@ def read_sensors(state=None):
     }
 
 
-def run_pump(system_name, state):
+def run_pump(system_name):
         """
         Simulates running a pump and refilling the soil moisture in the state.
-        Returns water used in liters.
         """
 
-        print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION} seconds ({water_used}L)...")
-        time.sleep(PUMP_DURATION)
+        print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION} seconds...")
+        if system_name == 'Smart':
+                pump2_off()
+                pump1_on()
+                time.sleep(PUMP_DURATION)
+                pump1_off()
+        elif system_name == 'Dumb':
+                pump1_off()                
+                pump2_on()
+                time.sleep(PUMP_DURATION)
+                pump2_off()
         print(f"   >>> ACTUATOR: Pump {system_name} OFF.")
 
-        # Track water consumption
-        if system_name == 'Smart':
-            state['moisture_smart'] = 90.0
-        elif system_name == 'Dumb':
-            state['moisture_dumb'] = 90.0
-        
 
-    # --- Logging Functions ---
+# --- Logging Functions ---
 
 def initialize_csv():
         """Creates the CSV file with headers if it doesn't exist."""
@@ -149,7 +151,7 @@ def log_to_csv(data, event="", reason=""):
 # --- Main Loop ---
 
 def main():
-        print("--- Master Control Program Started ---")
+        print("--- Soil Controller Started ---")
         print(f"Mode: {'DEMO' if DEMO_MODE else 'LIVE'}")
         print(f"Logging to: {CSV_FILENAME}")
         print(f"Loop Interval: {LOOP_INTERVAL_SECONDS} seconds")
@@ -189,7 +191,7 @@ def main():
         
         # Log system boot event if there was downtime
         if last_log_time is not None:
-            sim_state, boot_data = read_sensors(sim_state)
+            read_sensors(sim_state)
             downtime_delta = datetime.now() - last_log_time
             total_seconds = int(downtime_delta.total_seconds())
             downtime_hours = total_seconds // 3600
@@ -247,7 +249,7 @@ def main():
                 time.sleep(LOOP_INTERVAL_SECONDS)
 
         except KeyboardInterrupt:
-            print("\n--- Master Control Program Terminated by User ---")
+            print("\n--- Soil Controller Terminated by User ---")
 
 if __name__ == "__main__":
     try:
@@ -255,7 +257,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         # Handles Ctrl+C (User stopping the script)
         print("\nProgram interrupted by user. Exiting...")
-        send_error_email("User interrupted the program", recipient_email="hi@veerbajaj.com")
+        send_error_email("User interrupted the soil controller", recipient_email="hi@veerbajaj.com")
         sys.exit(0)
     except Exception as e:
         
