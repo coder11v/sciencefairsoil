@@ -13,6 +13,7 @@ def run_test():
     sleep(1)
     print("Continue with 17 (smart)? (press enter to continue)")
     input()
+
     print("Running 17 (smart)... Locking 27 OFF")
     # We turn 27 OFF again right before turning 17 ON 
     # to ensure the pin is actively pushing 3.3V
@@ -20,7 +21,8 @@ def run_test():
     pump1.on()
     sleep(1)
     pump1.off()
-
+    sleep(1)
+    sleep(2)
     sleep(1)
     print("Continue with 27 (dumb)? (press enter to continue)")
     input()
