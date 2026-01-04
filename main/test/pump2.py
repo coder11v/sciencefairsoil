@@ -19,9 +19,6 @@ def run_test():
     
     sleep(2) # Short buffer for relay mechanics
 
-    # --- PUMP 2 TEST ---
-    print("\nPress Enter to trigger Pump 2 (27) for 1 second...")
-    input()
     
     print("Pump 2 ON")
     pump2.on()
