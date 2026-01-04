@@ -79,3 +79,69 @@ Error:
         # Never crash the app because alerting failed
         print("Failed to send error email:", notify_error)
         return False, str(notify_error)
+
+
+
+
+def send_water_event_msg(pump="Unknown", recipient_email=None):
+    """
+    Send a watering event notification email.
+    - pump: Identifier or name of the pump that activated
+    - recipient_email: Primary recipient (defaults to sender if None)
+    """
+
+    try:
+        # 1. Setup Credentials
+        sender_email = "financevibro@gmail.com"
+        sender_password = Path("secrets/pw.txt").read_text().strip()
+
+        # 2. Determine Recipients
+        primary_email = recipient_email or sender_email
+
+        phone_email = None
+        try:
+            phone_email_path = Path("secrets/phone.txt")
+            if phone_email_path.exists():
+                phone_email = phone_email_path.read_text().strip()
+        except Exception:
+            print("Could not read secrets/phone.txt, skipping secondary email.")
+
+        recipients = [primary_email]
+        if phone_email:
+            recipients.append(phone_email)
+
+        if not sender_email or not sender_password:
+            return False, "Email credentials not configured"
+
+        # 3. Build message
+        msg = MIMEMultipart("alternative")
+        msg["From"] = sender_email
+        msg["To"] = ", ".join(recipients)
+        msg["Subject"] = "💧 Soil Watering Event"
+
+        timestamp = datetime.utcnow().isoformat()
+        hostname = socket.gethostname()
+
+        text_content = f"""
+Soil Watering Event
+
+Time (UTC): {timestamp}
+Host: {hostname}
+
+Pump Activated:
+{pump}
+"""
+
+        msg.attach(MIMEText(text_content, "plain"))
+
+        # 4. Send Email
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+
+        return True, f"Water event email sent to {len(recipients)} recipients"
+
+    except Exception as notify_error:
+        # Never crash the app because alerting failed
+        print("Failed to send water event email:", notify_error)
+        return False, str(notify_error)

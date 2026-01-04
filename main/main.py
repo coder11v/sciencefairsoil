@@ -6,7 +6,8 @@ import random
 import traceback
 from datetime import datetime, timedelta
 from logerr import logerr as er
-from emailer import send_error_email
+from emailer import send_error_email, send_water_event_msg
+
 
     # --- Configuration ---
 CSV_FILENAME = 'out/plant_data.csv'
@@ -283,6 +284,7 @@ def main():
                 if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
                     print("! Alert: Smart system moisture below threshold.")
                     water_used = run_pump('Smart', sim_state, water_tracker)
+                    send_water_event_msg(pump="Smart", recipient_email="hi@veerbajaj.com")
                     events.append("WATER_SMART_EVENT")
                     reasons.append("moisture too low on smart")
 
@@ -299,6 +301,7 @@ def main():
                     water_used = run_pump('Dumb', sim_state, water_tracker)
                     events.append("WATER_DUMB_EVENT")
                     reasons.append("48 hours passed on dumb")
+                    send_water_event_msg(pump="Dumb", recipient_email="hi@veerbajaj.com")
                     last_watered_dumb = now # Reset timer
 
                 # 4. Log Data
