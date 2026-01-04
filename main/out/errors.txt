@@ -1,0 +1,36 @@
+[2026-01-03 16:48:19] name 'pct_smart' is not defined
+Full Traceback: Traceback (most recent call last):
+  File "/Users/vib/Documents/GitHub/sciencefairsoil/main/main.py", line 251, in <module>
+    main()
+    ~~~~^^
+  File "/Users/vib/Documents/GitHub/sciencefairsoil/main/main.py", line 210, in main
+    sim_state, sensor_data = read_sensors(sim_state)
+                             ~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/vib/Documents/GitHub/sciencefairsoil/main/main.py", line 41, in read_sensors
+    'Soil_Moisture_Smart': pct_smart,
+                           ^^^^^^^^^
+NameError: name 'pct_smart' is not defined
+
+
+[2026-01-03 16:51:53] cannot unpack non-iterable NoneType object
+Full Traceback: Traceback (most recent call last):
+  File "/Users/vib/Documents/GitHub/sciencefairsoil/main/main.py", line 252, in <module>
+    main()
+    ~~~~^^
+  File "/Users/vib/Documents/GitHub/sciencefairsoil/main/main.py", line 211, in main
+    sim_state, sensor_data = read_sensors(sim_state)
+    ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+
+
+[2026-01-03 16:53:18] name 'sensor_data' is not defined
+Full Traceback: Traceback (most recent call last):
+  File "/Users/vib/Documents/GitHub/sciencefairsoil/main/main.py", line 252, in <module>
+    main()
+    ~~~~^^
+  File "/Users/vib/Documents/GitHub/sciencefairsoil/main/main.py", line 216, in main
+    if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
+       ^^^^^^^^^^^
+NameError: name 'sensor_data' is not defined
+
+
