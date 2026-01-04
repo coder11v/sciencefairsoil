@@ -1,40 +1,42 @@
 from gpiozero import DigitalOutputDevice
 from time import sleep
 
-# active_high=False means 0V = ON
-# initial_value=False means it starts at 3.3V (OFF)
+# active_high=False: 0V (Low) = ON, 3.3V (High) = OFF
+# initial_value=False: Starts at the "OFF" state (3.3V)
 pump1 = DigitalOutputDevice(17, active_high=False, initial_value=False)
 pump2 = DigitalOutputDevice(27, active_high=False, initial_value=False)
 
 def run_test():
-    # Force both OFF immediately
+    # Ensure everything is OFF to start
     pump1.off()
     pump2.off()
-    sleep(1)
-    print("Continue with 17 (smart)? (press enter to continue)")
+    
+    # --- PUMP 1 TEST ---
+    print("Press Enter to trigger Pump 1 (17) for 1 second...")
     input()
-
-    print("Running 17 (smart)... Locking 27 OFF")
-    # We turn 27 OFF again right before turning 17 ON 
-    # to ensure the pin is actively pushing 3.3V
-    pump2.off() 
+    
+    print("Pump 1 ON")
     pump1.on()
     sleep(1)
     pump1.off()
-    pump1.off()
+    print("Pump 1 OFF")
+    
+    sleep(0.5) # Short buffer for relay mechanics
 
-    print("Continue with 27 (dumb)? (press enter to continue)")
+    # --- PUMP 2 TEST ---
+    print("\nPress Enter to trigger Pump 2 (27) for 1 second...")
     input()
-
-    print("Running 27 (dumb)... Locking 17 OFF")
-    pump1.off()
+    
+    print("Pump 2 ON")
     pump2.on()
     sleep(1)
     pump2.off()
+    print("Pump 2 OFF")
 
 try:
     run_test()
 finally:
+    # Safety cleanup
     pump1.off()
     pump2.off()
-    print("Cleanup: Pins returned to 3.3V (Relay OFF state)")
+    print("\nCleanup: All pumps set to OFF (3.3V)")
