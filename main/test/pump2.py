@@ -11,17 +11,13 @@ def run_test():
     pump1.off()
     pump2.off()
     
-    # --- PUMP 1 TEST ---
-    print("Press Enter to trigger Pump 1 (17) for 1 second...")
-    input()
-    
     print("Pump 1 ON")
     pump1.on()
     sleep(1)
     pump1.off()
     print("Pump 1 OFF")
     
-    sleep(0.5) # Short buffer for relay mechanics
+    sleep(2) # Short buffer for relay mechanics
 
     # --- PUMP 2 TEST ---
     print("\nPress Enter to trigger Pump 2 (27) for 1 second...")
