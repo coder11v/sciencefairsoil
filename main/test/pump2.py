@@ -21,9 +21,8 @@ def run_test():
     pump1.on()
     sleep(1)
     pump1.off()
-    sleep(1)
-    sleep(2)
-    sleep(1)
+    pump1.off()
+
     print("Continue with 27 (dumb)? (press enter to continue)")
     input()
 
