@@ -211,18 +211,18 @@
       loadPage(window.location.hash.substring(1) || "Home");
       fetchCommits();
       fetchIssues();
-      fetchNgrokUrl(); // Fetch the dynamic link
+      fetchNgrokUrl();
     }
 
-    // DYNAMIC DATA LINK LOGIC
+    // --- FIX FOR LIVE FETCHING ---
     async function fetchNgrokUrl() {
       const linkBtn = document.getElementById('view-data-link');
+      const cacheBuster = `?t=${new Date().getTime()}`; // Forces bypass of cache
       try {
-        const res = await fetch(`${rawBase}/_ngrok.md`);
+        const res = await fetch(`${rawBase}/_ngrok.md${cacheBuster}`);
         if (!res.ok) throw new Error();
         const text = await res.text();
         
-        // Extract URL using regex (looks for strings starting with http)
         const urlMatch = text.match(/https?:\/\/[^\s]+/);
         if (urlMatch) {
           linkBtn.href = urlMatch[0];
@@ -236,7 +236,6 @@
       }
     }
 
-    // DOCS LOGIC
     function renderLinks(files) {
       const list = document.getElementById('page-list');
       list.innerHTML = '';
@@ -251,10 +250,11 @@
 
     async function loadPage(name) {
       const contentDiv = document.getElementById('content');
+      const cacheBuster = `?t=${new Date().getTime()}`;
       window.location.hash = name;
       contentDiv.innerHTML = "<em>Loading...</em>";
       try {
-        const res = await fetch(`${rawBase}/${name}.md`);
+        const res = await fetch(`${rawBase}/${name}.md${cacheBuster}`);
         const md = await res.text();
         contentDiv.innerHTML = marked.parse(md);
         document.querySelectorAll('.nav-link').forEach(l => {
