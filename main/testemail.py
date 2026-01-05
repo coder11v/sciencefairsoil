@@ -1,6 +1,6 @@
-from emailer import send_error_email
+from emailer import send_error_email, send_water_event_msg
 
 
 
 if __name__ == "__main__":
-    send_error_email("Just a test.", recipient_email="hi@veerbajaj.com")
+    send_water_event_msg(isubject="Test Subject", ipt="Test Text")

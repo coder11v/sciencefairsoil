@@ -83,13 +83,18 @@ Error:
 
 
 
-def send_water_event_msg(pump="Unknown", recipient_email=None):
+def send_water_event_msg(pump="Unknown", recipient_email=None, isubject=None, ipt=None):
     """
     Send a watering event notification email.
     - pump: Identifier or name of the pump that activated
     - recipient_email: Primary recipient (defaults to sender if None)
+    - isubject: Custom subject (defaults to default_subject if None)
+    - ipt: Custom text (defaults to default_pt if None)
     """
-
+    default_subject = "💧 Soil Watering Event"
+    default_pt = "Soil Watering Event"
+    subject = isubject or default_subject
+    pt = ipt or default_pt
     try:
         # 1. Setup Credentials
         sender_email = "financevibro@gmail.com"
@@ -117,13 +122,13 @@ def send_water_event_msg(pump="Unknown", recipient_email=None):
         msg = MIMEMultipart("alternative")
         msg["From"] = sender_email
         msg["To"] = ", ".join(recipients)
-        msg["Subject"] = "💧 Soil Watering Event"
+        msg["Subject"] = subject
 
         timestamp = datetime.utcnow().isoformat()
         hostname = socket.gethostname()
 
         text_content = f"""
-Soil Watering Event
+{pt}
 
 Time (UTC): {timestamp}
 Host: {hostname}

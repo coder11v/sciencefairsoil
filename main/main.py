@@ -8,19 +8,22 @@ from datetime import datetime, timedelta
 from logerr import logerr as er
 from emailer import send_error_email, send_water_event_msg
 from sensors import get_moisture
-from pump import pump1_on, pump1_off, pump2_on, pump2_off
+from pump import on
 
     # --- Configuration ---
 CSV_FILENAME = 'out/plant_data.csv'
-SOIL_MOISTURE_THRESHOLD_SMART = 40.0  # Percentage
-WATERING_INTERVAL_DUMB_HOURS = 48
-PUMP_DURATION = 2  # Seconds
+SOIL_MOISTURE_THRESHOLD_SMART = 30.0  # Percentage TODO
+SOIL_MOISTURE_THRESHOLD_GOAL = 80.0  # Percentage TODO
+WATERING_INTERVAL_DUMB_HOURS = 24
+PUMP_DURATION_SMART = 2  # Seconds, TODO
+PUMP_DURATION_DUMB = 2  # Seconds, TODO
+
 
     # Set DEMO_MODE to True to run the loop every 0.5 seconds instead of 30 minutes
     # and simulate 48 hours passing much faster.
     # Set to False for real-world operation.
     # 
-DEMO_MODE = True 
+DEMO_MODE = True # TODO
 
 if DEMO_MODE:
         LOOP_INTERVAL_SECONDS = 0.5
@@ -30,8 +33,7 @@ else:
         LOOP_INTERVAL_SECONDS = 1800 # 30 Minutes
         TIME_SCALE_FACTOR = 1
 
-    # --- Hardware Simulation Functions ---
-
+# --- Hardware Library Call Functions: Sensors ---
 def read_sensors(state=None):
     """
     Returns a dictionary of sensor readings.
@@ -44,23 +46,29 @@ def read_sensors(state=None):
         'Soil_Moisture_Dumb': pct_dumb
     }
 
+def check_smart_sensor():
+        """
+        Checks the smart soil moisture sensor and returns the state.
+        """
+        return get_moisture('a0')
 
+def check_dumb_sensor():
+        """
+        Checks the dumb soil moisture sensor and returns the state.
+        """
+        return get_moisture('a1')
+
+# --- Hardware Library Call Functions: Pump ---
 def run_pump(system_name):
         """
-        Simulates running a pump and refilling the soil moisture in the state.
+        Runs a pump and refills the soil moisture.
         """
-
-        print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION} seconds...")
         if system_name == 'Smart':
-                pump2_off()
-                pump1_on()
-                time.sleep(PUMP_DURATION)
-                pump1_off()
+                print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_SMART} seconds...")
+                on("smart", PUMP_DURATION_SMART)
         elif system_name == 'Dumb':
-                pump1_off()                
-                pump2_on()
-                time.sleep(PUMP_DURATION)
-                pump2_off()
+                print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_DUMB} seconds...")
+                on("dumb", PUMP_DURATION_DUMB)
         print(f"   >>> ACTUATOR: Pump {system_name} OFF.")
 
 
@@ -219,7 +227,7 @@ def main():
                 # 2. Smart System Logic (moisture-based)
                 if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
                     print("! Alert: Smart system moisture below threshold.")
-                    run_pump('Smart', sim_state)
+                    run_pump('smart', sim_state)
                     send_water_event_msg(pump="Smart", recipient_email="hi@veerbajaj.com")
                     events.append("WATER_SMART_EVENT")
                     reasons.append("moisture too low on smart")
@@ -234,7 +242,7 @@ def main():
 
                 if effective_elapsed_hours > WATERING_INTERVAL_DUMB_HOURS:
                     print(f"! Timer: {WATERING_INTERVAL_DUMB_HOURS} hours passed since last Dumb system watering.")
-                    run_pump('Dumb', sim_state)
+                    run_pump('dumb', sim_state)
                     events.append("WATER_DUMB_EVENT")
                     reasons.append("48 hours passed on dumb")
                     send_water_event_msg(pump="Dumb", recipient_email="hi@veerbajaj.com")
