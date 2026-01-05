@@ -3,8 +3,8 @@ from time import sleep
 
 # active_high=False: 0V (Low) = ON, 3.3V (High) = OFF
 # initial_value=False: Starts at the "OFF" state (3.3V)
-pump1 = DigitalOutputDevice(17, active_high=False, initial_value=False)
-pump2 = DigitalOutputDevice(27, active_high=False, initial_value=False)
+pump1 = DigitalOutputDevice(27, active_high=False, initial_value=False)
+pump2 = DigitalOutputDevice(17, active_high=False, initial_value=False)
 
 def run_test():
     # Ensure everything is OFF to start
