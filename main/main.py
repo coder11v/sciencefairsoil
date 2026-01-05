@@ -15,8 +15,11 @@ CSV_FILENAME = 'out/plant_data.csv'
 SOIL_MOISTURE_THRESHOLD_SMART = 30.0  # Percentage TODO
 SOIL_MOISTURE_THRESHOLD_GOAL = 80.0  # Percentage TODO
 WATERING_INTERVAL_DUMB_HOURS = 24
+NUMBER_OF_PLANTS = 3 # Plants per group (smart/dumb)
 PUMP_DURATION_SMART = 2  # Seconds, TODO
 PUMP_DURATION_DUMB = 2  # Seconds, TODO
+ML_PER_SECOND_SMART = 34.5 # mLs per second per pump, TODO
+ML_PER_SECOND_DUMB = 29.5 # mLs per second per pump, TODO
 
 
     # Set DEMO_MODE to True to run the loop every 0.5 seconds instead of 30 minutes

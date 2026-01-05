@@ -31,8 +31,8 @@ def safety():
     print("\n>>> Cleanup: All pumps set to OFF (3.3V)")
 
 try:
-    on("smart", 0)
-    sleep(2)
+    on("smart", 5)
+    sleep(3)
     on("dumb", 5)
 finally:
     safety()
