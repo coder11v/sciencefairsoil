@@ -1,3 +1,4 @@
+# --- Python imports ---
 import time
 import csv
 import os
@@ -5,12 +6,18 @@ import sys
 import random
 import traceback
 from datetime import datetime, timedelta
+
+# --- Local modules ---
 from logerr import logerr as er
 from emailer import send_error_email, send_water_event_msg
 from sensors import get_moisture
 from pump import on
+from state import load_state, save_state
 
-    # --- Configuration ---
+state = load_state()
+
+
+# --- Configuration ---
 CSV_FILENAME = 'out/plant_data.csv'
 SOIL_MOISTURE_THRESHOLD_SMART = 30.0  # Percentage TODO
 SOIL_MOISTURE_THRESHOLD_GOAL = 80.0  # Percentage TODO
@@ -18,17 +25,16 @@ WATERING_INTERVAL_DUMB_HOURS = 24
 NUMBER_OF_PLANTS = 3 # Plants per group (smart/dumb)
 PUMP_DURATION_SMART = 2  # Seconds, TODO
 PUMP_DURATION_DUMB = 2  # Seconds, TODO
-ML_PER_SECOND_SMART = 34.5 # mLs per second per pump, TODO
-ML_PER_SECOND_DUMB = 29.5 # mLs per second per pump, TODO
-ML_PER_WATER_PER_PLANT_SMART = (ML_PER_SECOND_SMART * PUMP_DURATION_SMART) / NUMBER_OF_PLANTS
-ML_PER_WATER_PER_PLANT_DUMB = (ML_PER_SECOND_DUMB * PUMP_DURATION_DUMB) / NUMBER_OF_PLANTS
+ML_PER_SECOND_SMART = 34.5 # mLs per second per pump
+ML_PER_SECOND_DUMB = 29.5 # mLs per second per pump
+ML_PER_WATER_PER_PLANT_SMART = (ML_PER_SECOND_SMART * PUMP_DURATION_SMART) / NUMBER_OF_PLANTS # mLs per plant per watering
+ML_PER_WATER_PER_PLANT_DUMB = (ML_PER_SECOND_DUMB * PUMP_DURATION_DUMB) / NUMBER_OF_PLANTS # mLs per plant per watering
 
 
 
-    # Set DEMO_MODE to True to run the loop every 0.5 seconds instead of 30 minutes
-    # and simulate 48 hours passing much faster.
-    # Set to False for real-world operation.
-    # 
+# Set DEMO_MODE to True to run the loop every 0.5 seconds instead of 30 minutes
+# and simulate 48 hours passing much faster.
+# Set to False for real-world operation.
 DEMO_MODE = True # TODO
 
 if DEMO_MODE:
@@ -40,14 +46,14 @@ else:
         TIME_SCALE_FACTOR = 1
 
 # --- Hardware Library Call Functions: Sensors ---
-def read_sensors(state=None):
+def read_sensors():
     """
     Returns a dictionary of sensor readings.
     """
     pct_smart = get_moisture('a0')
     pct_dumb = get_moisture('a1')
 
-    return state, {
+    return {
         'Soil_Moisture_Smart': pct_smart,
         'Soil_Moisture_Dumb': pct_dumb
     }
@@ -66,16 +72,24 @@ def check_dumb_sensor():
 
 # --- Hardware Library Call Functions: Pump ---
 def run_pump(system_name):
-        """
-        Runs a pump and refills the soil moisture.
-        """
-        if system_name == 'Smart':
-                print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_SMART} seconds...")
-                on("smart", PUMP_DURATION_SMART)
-        elif system_name == 'Dumb':
-                print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_DUMB} seconds...")
-                on("dumb", PUMP_DURATION_DUMB)
-        print(f"   >>> ACTUATOR: Pump {system_name} OFF.")
+    """
+    Runs a pump and refills the soil moisture.
+    Returns water used in liters.
+    """
+    if system_name.lower() == 'smart':
+        print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_SMART} seconds...")
+        on("smart", PUMP_DURATION_SMART)
+        water_used_ml = (ML_PER_WATER_PER_PLANT_SMART * NUMBER_OF_PLANTS)
+    elif system_name.lower() == 'dumb':
+        print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_DUMB} seconds...")
+        on("dumb", PUMP_DURATION_DUMB)
+        water_used_ml = (ML_PER_WATER_PER_PLANT_DUMB * NUMBER_OF_PLANTS)
+    else:
+        print(f"   >>> ACTUATOR: Pump {system_name} is not a valid pump name.")
+        return 0
+    
+    print(f"   >>> ACTUATOR: Pump {system_name} OFF.")
+    return water_used_ml
 
 
 # --- Logging Functions ---
@@ -91,7 +105,7 @@ def initialize_csv():
                     "Soil_Moisture_Dumb", 
                     "Event_Log",
                     "Water_Event_Reason",
-                    "Water_Used_L"
+                    "Water_Used_ML"
                 ])
             print(f"Created new log file: {CSV_FILENAME}")
         else:
@@ -146,14 +160,15 @@ def create_downtime_log(downtime_hours, downtime_minutes, demo_mode=False, time_
         
         return boot_log_filename
 
-def log_to_csv(data, event="", reason=""):
+def log_to_csv(data, event="", reason="", water_used_ml=0):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     row = [
         timestamp,
         data['Soil_Moisture_Smart'],
         data['Soil_Moisture_Dumb'],
         event,
-        reason
+        reason,
+        water_used_ml
     ]
 
     with open(CSV_FILENAME, mode='a', newline='') as file:
@@ -165,105 +180,96 @@ def log_to_csv(data, event="", reason=""):
 # --- Main Loop ---
 
 def main():
-        print("--- Soil Controller Started ---")
-        print(f"Mode: {'DEMO' if DEMO_MODE else 'LIVE'}")
-        print(f"Logging to: {CSV_FILENAME}")
-        print(f"Loop Interval: {LOOP_INTERVAL_SECONDS} seconds")
+    print("--- Soil Controller Started ---")
+    print(f"Logging to: {CSV_FILENAME}")
+    print(f"Loop Interval: {LOOP_INTERVAL_SECONDS} seconds")
 
-        initialize_csv()
+    initialize_csv()
 
-        # Check for downtime if CSV already had data
-        last_log_time = get_last_log_timestamp()
-        if last_log_time is not None:
-            now = datetime.now()
-            downtime_delta = now - last_log_time
-            total_seconds = int(downtime_delta.total_seconds())
-            downtime_hours = total_seconds // 3600
-            downtime_minutes = (total_seconds % 3600) // 60
-            
-            boot_log_file = create_downtime_log(downtime_hours, downtime_minutes, DEMO_MODE, TIME_SCALE_FACTOR)
-            
-            # Calculate simulated time for console output
-            if DEMO_MODE:
-                total_real_seconds = downtime_hours * 3600 + downtime_minutes * 60
-                total_simulated_seconds = total_real_seconds * TIME_SCALE_FACTOR
-                sim_hours = int(total_simulated_seconds // 3600)
-                sim_minutes = int((total_simulated_seconds % 3600) // 60)
-                print(f"! System Boot Detected: {downtime_hours}h {downtime_minutes}m real time ({sim_hours}h {sim_minutes}m simulated)")
-            else:
-                print(f"! System Boot Detected: {downtime_hours} hours {downtime_minutes} minutes of downtime")
-            print(f"Downtime documentation saved to: {boot_log_file}")
+    # Check for downtime if CSV already had data
+    last_log_time = get_last_log_timestamp()
+    if last_log_time is not None:
+        now = datetime.now()
+        downtime_delta = now - last_log_time
+        total_seconds = int(downtime_delta.total_seconds())
+        downtime_hours = total_seconds // 3600
+        downtime_minutes = (total_seconds % 3600) // 60
+        
+        boot_log_file = create_downtime_log(downtime_hours, downtime_minutes)
+        
+        print(f"! System Boot Detected: {downtime_hours} hours {downtime_minutes} minutes of downtime")
+        print(f"Downtime documentation saved to: {boot_log_file}")
 
-        # Initialize simulation state (dictionary instead of class instance)
-        sim_state = None
+        # Log system boot event with current sensor data
+        sensor_data = read_sensors()
+        boot_reason = f"{downtime_hours} hours {downtime_minutes} minutes missed"
+        log_to_csv(sensor_data, "SYSTEM_BOOT", boot_reason)
 
-        # Initialize Dumb System timer (pretend we just watered it so it waits for the first cycle)
+    # Initialize Dumb System timer
+    if state["last_watered_dumb"]:
+        last_watered_dumb = datetime.fromisoformat(state["last_watered_dumb"])
+    else:
         last_watered_dumb = datetime.now()
-        
-       
-        program_start_time = datetime.now()
-        
-        # Log system boot event if there was downtime
-        if last_log_time is not None:
-            read_sensors(sim_state)
-            downtime_delta = datetime.now() - last_log_time
-            total_seconds = int(downtime_delta.total_seconds())
-            downtime_hours = total_seconds // 3600
-            downtime_minutes = (total_seconds % 3600) // 60
-            
-            # Use simulated time in boot reason if demo mode is on
-            if DEMO_MODE:
-                total_real_seconds = downtime_hours * 3600 + downtime_minutes * 60
-                total_simulated_seconds = total_real_seconds * TIME_SCALE_FACTOR
-                sim_hours = int(total_simulated_seconds // 3600)
-                sim_minutes = int((total_simulated_seconds % 3600) // 60)
-                boot_reason = f"{sim_hours}h {sim_minutes}m simulated (demo mode)"
-            else:
-                boot_reason = f"{downtime_hours} hours {downtime_minutes} minutes missed"
-            
-            log_to_csv(boot_data, "SYSTEM_BOOT", boot_reason)
 
-        try:
-            while True:
-                # 1. Read Data (passes state to modify it)
-                read_sensors(sim_state)
-                events = []
-                reasons = []
+    try:
+        while True:
+            # 1. Read Data
+            sensor_data = read_sensors()
+            events = []
+            reasons = []
+            water_used = 0
 
-                # 2. Smart System Logic (moisture-based)
-                if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
-                    print("! Alert: Smart system moisture below threshold.")
-                    run_pump('smart', sim_state)
+            # 2. Smart System Logic (moisture-based)
+            if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
+                print(f"Moisture low ({sensor_data['Soil_Moisture_Smart']}%). Starting deep soak...")
+                # Configuration
+                MAX_PUMP_CYCLES = 10
+                safety = "CLEAR"  # Tracks safety status
+
+                cycles = 0
+    
+                while sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_GOAL:
+                    if cycles >= MAX_PUMP_CYCLES:
+                        safety = "TIMEOUT_EXCEEDED"
+                        print("! EMERGENCY: Safety timeout reached. Check sensor.")
+                        send_error_email("Smart System Safety Timeout", "Safety timeout reached. Check sensor.")
+                        events.append("EMERGENCY_SMART_TIMEOUT")
+                        reasons.append("Safety timeout reached. Check sensor.")
+                        break # Stop watering immediately
+            
+                    water_used += run_pump('smart')
+                    time.sleep(10) # Wait for soil absorption
+                    cycles += 1
+                    sensor_data['Soil_Moisture_Smart'] = check_smart_sensor()
+                
+                if safety == "CLEAR":
                     send_water_event_msg(pump="Smart", recipient_email="hi@veerbajaj.com")
                     events.append("WATER_SMART_EVENT")
-                    reasons.append("moisture too low on smart")
+                    reasons.append("Moisture too low on smart system.")
 
-                # 3. Dumb System Logic (timer-based)
-                # Calculate time elapsed. In Demo mode, we fake the elapsed time.
-                now = datetime.now()
-                elapsed = now - last_watered_dumb
+            # 3. Dumb System Logic (timer-based)
+            now = datetime.now()
+            elapsed = now - last_watered_dumb
+            elapsed_hours = elapsed.total_seconds() / 3600
 
-                # Logic to handle the threshold check
-                effective_elapsed_hours = (elapsed.total_seconds() * TIME_SCALE_FACTOR) / 3600
+            if elapsed_hours >= WATERING_INTERVAL_DUMB_HOURS:
+                print(f"! Timer: {WATERING_INTERVAL_DUMB_HOURS} hours passed since last Dumb system watering.")
+                water_used += run_pump('dumb')
+                events.append("WATER_DUMB_EVENT")
+                reasons.append(f"{WATERING_INTERVAL_DUMB_HOURS} hours passed on dumb system.")
+                send_water_event_msg(pump="Dumb", recipient_email="hi@veerbajaj.com")
+                last_watered_dumb = now
+                state["last_watered_dumb"] = now.isoformat()
+                save_state(state)
 
-                if effective_elapsed_hours > WATERING_INTERVAL_DUMB_HOURS:
-                    print(f"! Timer: {WATERING_INTERVAL_DUMB_HOURS} hours passed since last Dumb system watering.")
-                    run_pump('dumb', sim_state)
-                    events.append("WATER_DUMB_EVENT")
-                    reasons.append("48 hours passed on dumb")
-                    send_water_event_msg(pump="Dumb", recipient_email="hi@veerbajaj.com")
-                    last_watered_dumb = now # Reset timer
+            # 4. Log Data
+            event_string = "; ".join(events) if events else "Routine Check"
+            reason_string = "; ".join(reasons) if reasons else ""
+            log_to_csv(sensor_data, event_string, reason_string, water_used)
+            
+            # 5. Wait
+            time.sleep(LOOP_INTERVAL_SECONDS)
 
-                # 4. Log Data
-                event_string = "; ".join(events) if events else "Routine Check"
-                reason_string = "; ".join(reasons) if reasons else ""
-                log_to_csv(sensor_data, event_string, reason_string)
-                
-                # 5. Wait
-                time.sleep(LOOP_INTERVAL_SECONDS)
-
-        except KeyboardInterrupt:
-            print("\n--- Soil Controller Terminated by User ---")
 
 if __name__ == "__main__":
     try:
