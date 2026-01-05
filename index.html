@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>sciencefairsoil | Dashboard</title>
+  <title>sciencefairsoil | Docs</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     :root {
@@ -29,7 +29,7 @@
       overflow: hidden;
     }
 
-    /* Mobile Header - Compact */
+    /* Mobile Header */
     .mobile-nav {
       display: none;
       background: var(--sidebar-bg);
@@ -54,9 +54,8 @@
     }
 
     nav { border-right: 1px solid var(--border); }
-    aside { border-left: 1px solid var(--border); padding: 1rem; }
+    aside { border-left: 1px solid var(--border); padding: 1rem; position: relative; }
 
-    /* Overlay Backdrop */
     #overlay {
       display: none;
       position: fixed;
@@ -65,7 +64,11 @@
       z-index: 1001;
     }
 
-    /* List and Link Styling */
+    /* Content Area */
+    main { padding: 2rem; overflow-y: auto; }
+    #content { max-width: 800px; margin: 0 auto; line-height: 1.6; }
+
+    /* Navigation / Search */
     .search-box { padding: 1rem; }
     input {
       width: 100%; background: var(--bg); border: 1px solid var(--border);
@@ -79,10 +82,7 @@
     .nav-link:hover { background: var(--hover); }
     .nav-link.active { background: #1f6feb; color: white; }
 
-    main { padding: 2rem; overflow-y: auto; }
-    #content { max-width: 800px; margin: 0 auto; line-height: 1.6; }
-
-    /* Sidebar Content Sections */
+    /* Sidebar Items */
     .sidebar-section { margin-bottom: 1.5rem; }
     .sidebar-section h2 { 
       font-size: 0.75rem; color: var(--text-muted); 
@@ -94,12 +94,32 @@
     .item-meta { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 4px; }
     .avatar { width: 14px; height: 14px; border-radius: 50%; }
 
+    /* Sidebar Footer / Data Link */
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .view-data-btn {
+      display: block;
+      text-align: center;
+      background: #238636;
+      color: white;
+      text-decoration: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .view-data-btn:hover { background: #2ea043; }
+    .view-data-btn.loading { background: var(--hover); color: var(--text-muted); pointer-events: none; }
+
     button.toggle-btn {
       background: #21262d; color: var(--text); border: 1px solid var(--border);
       padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
     }
 
-    /* Mobile Responsive Adjustments */
     @media (max-width: 1100px) {
       body { grid-template-columns: 240px 1fr; }
       aside {
@@ -151,6 +171,10 @@
       <h2>Open Issues</h2>
       <div id="issues"></div>
     </div>
+
+    <div class="sidebar-footer">
+      <a href="#" id="view-data-link" target="_blank" class="view-data-btn loading">Fetching Data Link...</a>
+    </div>
   </aside>
 
   <script>
@@ -187,6 +211,29 @@
       loadPage(window.location.hash.substring(1) || "Home");
       fetchCommits();
       fetchIssues();
+      fetchNgrokUrl(); // Fetch the dynamic link
+    }
+
+    // DYNAMIC DATA LINK LOGIC
+    async function fetchNgrokUrl() {
+      const linkBtn = document.getElementById('view-data-link');
+      try {
+        const res = await fetch(`${rawBase}/_ngrok.md`);
+        if (!res.ok) throw new Error();
+        const text = await res.text();
+        
+        // Extract URL using regex (looks for strings starting with http)
+        const urlMatch = text.match(/https?:\/\/[^\s]+/);
+        if (urlMatch) {
+          linkBtn.href = urlMatch[0];
+          linkBtn.textContent = "View Live Data";
+          linkBtn.classList.remove('loading');
+        } else {
+          linkBtn.textContent = "Data Link Offline";
+        }
+      } catch (e) {
+        linkBtn.textContent = "Data Link Unavailable";
+      }
     }
 
     // DOCS LOGIC
