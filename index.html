@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sciencefairsoil | Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --sidebar-bg: #161b22;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --border: #30363d;
+      --hover: #21262d;
+      --issue-open: #3fb950;
+      --overlay: rgba(0, 0, 0, 0.7);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      margin: 0;
+      display: grid;
+      grid-template-columns: 260px 1fr 320px;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* Mobile Header - Compact */
+    .mobile-nav {
+      display: none;
+      background: var(--sidebar-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 12px;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      height: 44px;
+      box-sizing: border-box;
+    }
+
+    /* Sidebars */
+    nav, aside {
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 1002;
+    }
+
+    nav { border-right: 1px solid var(--border); }
+    aside { border-left: 1px solid var(--border); padding: 1rem; }
+
+    /* Overlay Backdrop */
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--overlay);
+      z-index: 1001;
+    }
+
+    /* List and Link Styling */
+    .search-box { padding: 1rem; }
+    input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      color: white; padding: 6px; border-radius: 6px; outline: none;
+    }
+    .nav-link {
+      display: block; padding: 8px 12px; color: var(--text);
+      text-decoration: none; border-radius: 6px; font-size: 0.9rem;
+      margin-bottom: 2px; cursor: pointer;
+    }
+    .nav-link:hover { background: var(--hover); }
+    .nav-link.active { background: #1f6feb; color: white; }
+
+    main { padding: 2rem; overflow-y: auto; }
+    #content { max-width: 800px; margin: 0 auto; line-height: 1.6; }
+
+    /* Sidebar Content Sections */
+    .sidebar-section { margin-bottom: 1.5rem; }
+    .sidebar-section h2 { 
+      font-size: 0.75rem; color: var(--text-muted); 
+      text-transform: uppercase; border-bottom: 1px solid var(--border);
+      padding-bottom: 5px; margin-bottom: 10px;
+    }
+    .list-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .item-link { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .item-meta { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+    .avatar { width: 14px; height: 14px; border-radius: 50%; }
+
+    button.toggle-btn {
+      background: #21262d; color: var(--text); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+    }
+
+    /* Mobile Responsive Adjustments */
+    @media (max-width: 1100px) {
+      body { grid-template-columns: 240px 1fr; }
+      aside {
+        position: fixed; right: 0; top: 0; bottom: 0; width: 280px;
+        transform: translateX(100%); transition: transform 0.2s ease;
+      }
+      aside.open { transform: translateX(0); }
+    }
+
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .mobile-nav { display: flex; }
+      nav {
+        position: fixed; left: 0; top: 0; bottom: 0; width: 260px;
+        transform: translateX(-100%); transition: transform 0.2s ease;
+      }
+      nav.open { transform: translateX(0); }
+      main { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="overlay" onclick="closeAll()"></div>
+
+  <div class="mobile-nav">
+    <button class="toggle-btn" onclick="toggleSidebar('nav')">☰ Pages</button>
+    <span style="font-size: 0.85rem; font-weight: 600;">sciencefairsoil</span>
+    <button class="toggle-btn" onclick="toggleSidebar('aside')">Activity ⚡</button>
+  </div>
+
+  <nav id="sidebar-left">
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Search pages..." oninput="filterPages()">
+    </div>
+    <div id="page-list"></div>
+  </nav>
+
+  <main>
+    <article id="content"><h1>Loading...</h1></article>
+  </main>
+
+  <aside id="sidebar-right">
+    <div class="sidebar-section">
+      <h2>Recent Commits</h2>
+      <div id="commits"></div>
+    </div>
+    <div class="sidebar-section">
+      <h2>Open Issues</h2>
+      <div id="issues"></div>
+    </div>
+  </aside>
+
+  <script>
+    const user = "coder11v";
+    const repo = "sciencefairsoil";
+    const rawBase = `https://raw.githubusercontent.com/wiki/${user}/${repo}`;
+    const wikiFiles = ["Home", "My-Hardware", "Pump-Calib", "Snap-Peas", "Specs-Product-Requirements", "Wiring-Guide", "Workflow", "zero-to-sensors"];
+
+    // UI CONTROLS
+    function toggleSidebar(id) {
+      const left = document.getElementById('sidebar-left');
+      const right = document.getElementById('sidebar-right');
+      const overlay = document.getElementById('overlay');
+      const target = (id === 'nav') ? left : right;
+      const other = (id === 'nav') ? right : left;
+
+      if (target.classList.contains('open')) {
+        closeAll();
+      } else {
+        other.classList.remove('open');
+        target.classList.add('open');
+        overlay.style.display = 'block';
+      }
+    }
+
+    function closeAll() {
+      document.getElementById('sidebar-left').classList.remove('open');
+      document.getElementById('sidebar-right').classList.remove('open');
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+    function init() {
+      renderLinks(wikiFiles);
+      loadPage(window.location.hash.substring(1) || "Home");
+      fetchCommits();
+      fetchIssues();
+    }
+
+    // DOCS LOGIC
+    function renderLinks(files) {
+      const list = document.getElementById('page-list');
+      list.innerHTML = '';
+      files.forEach(name => {
+        const a = document.createElement('div');
+        a.className = 'nav-link' + (window.location.hash.substring(1) === name ? ' active' : '');
+        a.textContent = name.replace(/-/g, ' ');
+        a.onclick = () => { loadPage(name); closeAll(); };
+        list.appendChild(a);
+      });
+    }
+
+    async function loadPage(name) {
+      const contentDiv = document.getElementById('content');
+      window.location.hash = name;
+      contentDiv.innerHTML = "<em>Loading...</em>";
+      try {
+        const res = await fetch(`${rawBase}/${name}.md`);
+        const md = await res.text();
+        contentDiv.innerHTML = marked.parse(md);
+        document.querySelectorAll('.nav-link').forEach(l => {
+          l.classList.toggle('active', l.textContent.replace(/ /g, '-') === name);
+        });
+      } catch (e) { contentDiv.innerHTML = `<h1>Error</h1><p>Could not load ${name}.md</p>`; }
+    }
+
+    // GITHUB LOGIC
+    async function fetchCommits() {
+      const container = document.getElementById("commits");
+      try {
+        const res = await fetch(`https://api.github.com/repos/${user}/${repo}/commits`);
+        const data = await res.json();
+        container.innerHTML = data.slice(0, 5).map(c => `
+          <div class="list-item">
+            <a href="${c.html_url}" target="_blank" class="item-link">${c.commit.message.split('\n')[0]}</a>
+            <div class="item-meta"><img class="avatar" src="${c.author?.avatar_url || ''}">${c.commit.author.name}</div>
+          </div>`).join('');
+      } catch (e) { container.innerHTML = "Error loading."; }
+    }
+
+    async function fetchIssues() {
+      const container = document.getElementById("issues");
+      try {
+        const res = await fetch(`https://api.github.com/repos/${user}/${repo}/issues?state=open`);
+        const data = await res.json();
+        container.innerHTML = data.length ? data.slice(0, 5).map(i => `
+          <div class="list-item">
+            <a href="${i.html_url}" target="_blank" class="item-link">#${i.number} ${i.title}</a>
+            <div class="item-meta">by ${i.user.login}</div>
+          </div>`).join('') : "<div class='item-meta'>No open issues</div>";
+      } catch (e) { container.innerHTML = "Error loading."; }
+    }
+
+    init();
+  </script>
+</body>
+</html>
