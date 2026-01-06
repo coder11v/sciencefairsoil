@@ -464,6 +464,11 @@
                     <option value="demo">Demo Data</option>
                 </select>
             </div>
+            <div class="control-group">
+                <label for="timeSlider">🕒 Time Machine:</label>
+                <input type="range" id="timeSlider" min="0" max="1440" value="0" step="1" style="width: 200px;">
+                <span id="timeOffsetLabel" style="min-width: 80px; font-weight: bold; color: #4CAF50;">Live</span>
+            </div>
             <button onclick="downloadData()" title="Download plant data as CSV">
                 📥 Download CSV
             </button>
@@ -552,6 +557,13 @@
         let isDemoData = false;
         let refreshInterval = null;
         let autoRefreshEnabled = true;
+        let timeOffsetMinutes = 0;
+
+        function parseDate(dateStr) {
+            // Converts "YYYY-MM-DD HH:MM:SS" to a Date object
+            if (!dateStr) return new Date(0);
+            return new Date(dateStr.replace(' ', 'T'));
+        }
 
         // Fetch and parse CSV
         async function loadData() {
@@ -576,9 +588,7 @@
                 const text = await response.text();
                 parseCSV(text);
 
-                updateStats();
-                createCharts();
-                displayTable();
+                applyFilters();
                 updateLastRefreshTime();
                 setStatusDotReady();
             } catch (error) {
@@ -595,19 +605,34 @@
                 return;
             }
 
-            const headers = lines[0].split(',');
+            allData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                if (values.length < 4) continue;
 
-            allData = lines.slice(1).map(line => {
-                const values = line.split(',');
-                return {
-                    timestamp: values[0],
+                const timeStr = values[0];
+                const timestamp = parseDate(timeStr).getTime();
+
+                allData.push({
+                    timestamp: timeStr,
+                    timestampMs: timestamp,
                     smartMoisture: parseFloat(values[1]),
                     dumbMoisture: parseFloat(values[2]),
                     event: values[3],
                     reason: values[4],
                     waterUsed: values[5]
-                };
-            });
+                });
+            }
+
+            // Update Time Machine slider range based on data
+            if (allData.length > 1) {
+                const earliest = allData[0].timestampMs;
+                const latest = allData[allData.length - 1].timestampMs;
+                const totalMinutes = Math.floor((latest - earliest) / (60 * 1000));
+
+                const slider = document.getElementById('timeSlider');
+                slider.max = Math.max(totalMinutes, 1440); // At least 24h or more if data spans further
+            }
 
             filteredData = [...allData];
         }
@@ -711,12 +736,37 @@
         }
 
         function applyFilters() {
+            if (allData.length === 0) return;
+
             const eventFilter = document.getElementById('eventFilter').value;
+            const sliderValue = parseInt(document.getElementById('timeSlider').value);
+            timeOffsetMinutes = sliderValue;
+
+            const latestDataPoint = allData[allData.length - 1];
+            const latestTimeMs = latestDataPoint.timestampMs;
+            const cutoffTimeMs = latestTimeMs - (timeOffsetMinutes * 60 * 1000);
+
+            // Update label
+            const label = document.getElementById('timeOffsetLabel');
+            if (timeOffsetMinutes === 0) {
+                label.textContent = 'Live';
+                label.style.color = '#4CAF50';
+            } else {
+                label.textContent = `-${timeOffsetMinutes}m`;
+                label.style.color = '#FFC107';
+            }
 
             filteredData = allData.filter(row => {
+                // Primary filter: Time Scrollback (only show data up to cutoff)
+                if (row.timestampMs > cutoffTimeMs) {
+                    return false;
+                }
+
+                // Secondary filter: Event Type
                 if (eventFilter && !row.event.includes(eventFilter)) {
                     return false;
                 }
+
                 return true;
             });
 
@@ -724,10 +774,19 @@
             updateStats();
             createCharts();
             displayTable();
+
+            // Update simulated "Live" time in the UI
+            const lastUpdateElem = document.getElementById('lastUpdate');
+            if (timeOffsetMinutes > 0) {
+                lastUpdateElem.textContent = new Date(cutoffTimeMs).toLocaleTimeString() + ' (Simulated)';
+            } else {
+                lastUpdateElem.textContent = new Date(latestTimeMs).toLocaleTimeString();
+            }
         }
 
         function resetFilters() {
             document.getElementById('eventFilter').value = '';
+            document.getElementById('timeSlider').value = 0;
             applyFilters();
         }
 
@@ -900,6 +959,8 @@
             currentPage = 1;
             loadData();
         });
+
+        document.getElementById('timeSlider').addEventListener('input', applyFilters);
     </script>
 </body>
 
