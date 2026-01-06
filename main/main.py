@@ -219,7 +219,19 @@ def main():
         water_used = 0
 
         # 2. Smart System Logic (moisture-based)
-        if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
+        if state.get("smart_system_disabled", False):
+            state["smart_disabled_count"] = state.get("smart_disabled_count", 0) + 1
+            print(f"! SMART SYSTEM DISABLED: Skip cycle {state['smart_disabled_count']}/1. Skipping smart watering.")
+            
+            if state["smart_disabled_count"] >= 1:
+                print("! AUTO-RECOVERY: 1 skip cycle reached. Re-enabling smart system for next check.")
+                state["smart_system_disabled"] = False
+                state["smart_disabled_count"] = 0
+            
+            save_state(state)
+            events.append("SMART_DISABLED")
+            reasons.append(f"System in emergency shutdown state (Skip {state.get('smart_disabled_count', 0)}/1).")
+        elif sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
             print(f"Moisture low ({sensor_data['Soil_Moisture_Smart']}%). Starting deep soak...")
             # Configuration
             MAX_PUMP_CYCLES = 10
@@ -231,7 +243,14 @@ def main():
                 if cycles >= MAX_PUMP_CYCLES:
                     safety = "TIMEOUT_EXCEEDED"
                     print("! EMERGENCY: Safety timeout reached. Check sensor.")
-                    send_error_email("Smart System Safety Timeout", "Safety timeout reached. Check sensor.")
+                    
+                    # Store emergency state
+                    state["smart_system_disabled"] = True
+                    state["smart_disabled_count"] = 0
+                    state["last_emergency_shutdown"] = datetime.now().isoformat()
+                    save_state(state)
+                    
+                    send_error_email("Smart System Safety Timeout", "Safety timeout reached. Check sensor. System disabled until manual reset.")
                     events.append("EMERGENCY_SMART_TIMEOUT")
                     reasons.append("Safety timeout reached. Check sensor.")
                     break # Stop watering immediately

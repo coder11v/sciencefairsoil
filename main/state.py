@@ -7,7 +7,10 @@ STATE_FILE = "out/state.json"
 DEFAULT_STATE = {
     "last_watered_dumb": None,
     "last_smart_alert": None,
-    "smart_soak_cycles": 0
+    "smart_soak_cycles": 0,
+    "smart_system_disabled": False,
+    "last_emergency_shutdown": None,
+    "smart_disabled_count": 0
 }
 
 def _ensure_dir():
