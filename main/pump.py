@@ -29,11 +29,11 @@ def safety():
     pump2.off()
     pump1.off()
     print("\n>>> Cleanup: All pumps set to OFF (3.3V)")
-
-try:
-    on("smart", 5)
-    sleep(3)
-    on("dumb", 5)
-finally:
-    safety()
+if __name__ == "__main__":
+    try:
+        on("smart", 5)
+        sleep(3)
+        on("dumb", 5)
+    finally:
+        safety()
     
