@@ -211,64 +211,63 @@ def main():
     else:
         last_watered_dumb = datetime.now()
 
-    try:
-        while True:
-            # 1. Read Data
-            sensor_data = read_sensors()
-            events = []
-            reasons = []
-            water_used = 0
+    while True:
+        # 1. Read Data
+        sensor_data = read_sensors()
+        events = []
+        reasons = []
+        water_used = 0
 
-            # 2. Smart System Logic (moisture-based)
-            if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
-                print(f"Moisture low ({sensor_data['Soil_Moisture_Smart']}%). Starting deep soak...")
-                # Configuration
-                MAX_PUMP_CYCLES = 10
-                safety = "CLEAR"  # Tracks safety status
+        # 2. Smart System Logic (moisture-based)
+        if sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_SMART:
+            print(f"Moisture low ({sensor_data['Soil_Moisture_Smart']}%). Starting deep soak...")
+            # Configuration
+            MAX_PUMP_CYCLES = 10
+            safety = "CLEAR"  # Tracks safety status
 
-                cycles = 0
-    
-                while sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_GOAL:
-                    if cycles >= MAX_PUMP_CYCLES:
-                        safety = "TIMEOUT_EXCEEDED"
-                        print("! EMERGENCY: Safety timeout reached. Check sensor.")
-                        send_error_email("Smart System Safety Timeout", "Safety timeout reached. Check sensor.")
-                        events.append("EMERGENCY_SMART_TIMEOUT")
-                        reasons.append("Safety timeout reached. Check sensor.")
-                        break # Stop watering immediately
+            cycles = 0
+
+            while sensor_data['Soil_Moisture_Smart'] < SOIL_MOISTURE_THRESHOLD_GOAL:
+                if cycles >= MAX_PUMP_CYCLES:
+                    safety = "TIMEOUT_EXCEEDED"
+                    print("! EMERGENCY: Safety timeout reached. Check sensor.")
+                    send_error_email("Smart System Safety Timeout", "Safety timeout reached. Check sensor.")
+                    events.append("EMERGENCY_SMART_TIMEOUT")
+                    reasons.append("Safety timeout reached. Check sensor.")
+                    break # Stop watering immediately
+        
+                water_used += run_pump('smart')
+                time.sleep(10) # Wait for soil absorption
+                cycles += 1
+                sensor_data['Soil_Moisture_Smart'] = check_smart_sensor()
             
-                    water_used += run_pump('smart')
-                    time.sleep(10) # Wait for soil absorption
-                    cycles += 1
-                    sensor_data['Soil_Moisture_Smart'] = check_smart_sensor()
-                
-                if safety == "CLEAR":
-                    send_water_event_msg(pump="Smart", recipient_email="hi@veerbajaj.com")
-                    events.append("WATER_SMART_EVENT")
-                    reasons.append("Moisture too low on smart system.")
+            if safety == "CLEAR":
+                send_water_event_msg(pump="Smart", recipient_email="hi@veerbajaj.com")
+                events.append("WATER_SMART_EVENT")
+                reasons.append("Moisture too low on smart system.")
 
-            # 3. Dumb System Logic (timer-based)
-            now = datetime.now()
-            elapsed = now - last_watered_dumb
-            elapsed_hours = elapsed.total_seconds() / 3600
+        # 3. Dumb System Logic (timer-based)
+        now = datetime.now()
+        elapsed = now - last_watered_dumb
+        elapsed_hours = elapsed.total_seconds() / 3600
 
-            if elapsed_hours >= WATERING_INTERVAL_DUMB_HOURS:
-                print(f"! Timer: {WATERING_INTERVAL_DUMB_HOURS} hours passed since last Dumb system watering.")
-                water_used += run_pump('dumb')
-                events.append("WATER_DUMB_EVENT")
-                reasons.append(f"{WATERING_INTERVAL_DUMB_HOURS} hours passed on dumb system.")
-                send_water_event_msg(pump="Dumb", recipient_email="hi@veerbajaj.com")
-                last_watered_dumb = now
-                state["last_watered_dumb"] = now.isoformat()
-                save_state(state)
+        if elapsed_hours >= WATERING_INTERVAL_DUMB_HOURS:
+            print(f"! Timer: {WATERING_INTERVAL_DUMB_HOURS} hours passed since last Dumb system watering.")
+            water_used += run_pump('dumb')
+            events.append("WATER_DUMB_EVENT")
+            reasons.append(f"{WATERING_INTERVAL_DUMB_HOURS} hours passed on dumb system.")
+            send_water_event_msg(pump="Dumb", recipient_email="hi@veerbajaj.com")
+            last_watered_dumb = now
+            state["last_watered_dumb"] = now.isoformat()
+            save_state(state)
 
-            # 4. Log Data
-            event_string = "; ".join(events) if events else "Routine Check"
-            reason_string = "; ".join(reasons) if reasons else ""
-            log_to_csv(sensor_data, event_string, reason_string, water_used)
-            
-            # 5. Wait
-            time.sleep(LOOP_INTERVAL_SECONDS)
+        # 4. Log Data
+        event_string = "; ".join(events) if events else "Routine Check"
+        reason_string = "; ".join(reasons) if reasons else ""
+        log_to_csv(sensor_data, event_string, reason_string, water_used)
+        
+        # 5. Wait
+        time.sleep(LOOP_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":
