@@ -48,7 +48,7 @@ def send_error_email(error="Unknown Error", recipient_email=None):
         msg["To"] = ", ".join(recipients) 
         msg["Subject"] = "🚨 Soil Error Alert"
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         hostname = socket.gethostname()
         trace = traceback.format_exc() if isinstance(error, Exception) else "N/A"
 
@@ -56,7 +56,7 @@ def send_error_email(error="Unknown Error", recipient_email=None):
         text_content = f"""
 Soil Error Alert
 
-Time (UTC): {timestamp}
+Time (Local): {timestamp}
 Host: {hostname}
 
 Error:
@@ -124,13 +124,13 @@ def send_water_event_msg(pump="Unknown", recipient_email=None, isubject=None, ip
         msg["To"] = ", ".join(recipients)
         msg["Subject"] = subject
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         hostname = socket.gethostname()
 
         text_content = f"""
 {pt}
 
-Time (UTC): {timestamp}
+Time (Local): {timestamp}
 Host: {hostname}
 
 Pump Activated:
