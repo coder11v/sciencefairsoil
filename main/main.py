@@ -19,12 +19,12 @@ state = load_state()
 
 # --- Configuration ---
 CSV_FILENAME = 'out/plant_data.csv'
-SOIL_MOISTURE_THRESHOLD_SMART = 40.0  # Percentage TODO
-SOIL_MOISTURE_THRESHOLD_GOAL = 70.0  # Percentage TODO
+SOIL_MOISTURE_THRESHOLD_SMART = 40.0  # Percentage
+SOIL_MOISTURE_THRESHOLD_GOAL = 70.0  # Percentage
 WATERING_INTERVAL_DUMB_HOURS = 24
 NUMBER_OF_POTS = 3 # Pots per group (smart/dumb)
 PUMP_DURATION_SMART = 2  # Seconds, TODO
-PUMP_DURATION_DUMB = 4.828571428571428  # Seconds, TODO
+PUMP_DURATION_DUMB = 4.828571428571428  # Seconds
 ML_PER_SECOND_SMART = 34.5 # mLs per second per pump
 ML_PER_SECOND_DUMB = 29.5 # mLs per second per pump
 ML_PER_WATER_PER_POT_SMART = (ML_PER_SECOND_SMART * PUMP_DURATION_SMART) / NUMBER_OF_POTS # mLs per pot per watering
@@ -78,11 +78,11 @@ def run_pump(system_name):
     """
     if system_name.lower() == 'smart':
         print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_SMART} seconds...")
-        # on("smart", PUMP_DURATION_SMART) TODO
+        on("smart", PUMP_DURATION_SMART)
         water_used_ml = (ML_PER_WATER_PER_POT_SMART * NUMBER_OF_POTS)
     elif system_name.lower() == 'dumb':
         print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_DUMB} seconds...")
-        # on("dumb", PUMP_DURATION_DUMB) TODO
+        on("dumb", PUMP_DURATION_DUMB)
         water_used_ml = (ML_PER_WATER_PER_POT_DUMB * NUMBER_OF_POTS)
     else:
         print(f"   >>> ACTUATOR: Pump {system_name} is not a valid pump name.")
