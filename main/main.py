@@ -78,11 +78,11 @@ def run_pump(system_name):
     """
     if system_name.lower() == 'smart':
         print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_SMART} seconds...")
-        on("smart", PUMP_DURATION_SMART)
+        # on("smart", PUMP_DURATION_SMART) TODO
         water_used_ml = (ML_PER_WATER_PER_POT_SMART * NUMBER_OF_POTS)
     elif system_name.lower() == 'dumb':
         print(f"   >>> ACTUATOR: Turning on Pump {system_name} for {PUMP_DURATION_DUMB} seconds...")
-        on("dumb", PUMP_DURATION_DUMB)
+        # on("dumb", PUMP_DURATION_DUMB) TODO
         water_used_ml = (ML_PER_WATER_PER_POT_DUMB * NUMBER_OF_POTS)
     else:
         print(f"   >>> ACTUATOR: Pump {system_name} is not a valid pump name.")
