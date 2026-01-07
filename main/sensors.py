@@ -18,7 +18,6 @@ Usage in your main script:
 
 The percentage scale:
     0% = Completely dry soil (high voltage)
-    50% = Moderately moist soil (medium voltage)
     100% = Saturated/fully wet soil (low voltage)
 """
 
@@ -28,18 +27,16 @@ import adafruit_ads1x15.ads1115 as ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
 
 # ============================================================================
-# CALIBRATION VALUES (auto-generated from calibration script)
+# CALIBRATION VALUES (two-point calibration)
 # ============================================================================
 
 # Sensor A (A0) calibration voltages
 SENSOR_A_DRY_VOLTAGE = 2.73      # 0% moisture
-SENSOR_A_HALF_VOLTAGE = 2.0365    # 50% moisture
-SENSOR_A_WET_VOLTAGE = 1.3958      # 100% moisture
+SENSOR_A_WET_VOLTAGE = 1.3958     # 100% moisture
 
 # Sensor B (A1) calibration voltages
-SENSOR_B_DRY_VOLTAGE = 2.6755      # 0% moisture
-SENSOR_B_HALF_VOLTAGE = 2.5102    # 50% moisture
-SENSOR_B_WET_VOLTAGE = 1.3515      # 100% moisture
+SENSOR_B_DRY_VOLTAGE = 2.6755     # 0% moisture
+SENSOR_B_WET_VOLTAGE = 1.3515     # 100% moisture
 
 # ============================================================================
 # ADC SETUP
