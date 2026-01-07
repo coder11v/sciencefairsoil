@@ -7,6 +7,12 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from sensors import *
 
 if __name__ == "__main__":
-    raw = get_moisture_raw("a1")
-    per = get_moisture("a1")
-    print(f"\nRaw: {raw}\nPercentage: {per}\n")
+    # Reading for a1
+    raw_a1 = get_moisture_raw("a1")
+    per_a1 = get_moisture("a1")
+    print(f"a1 \nRaw: {raw_a1}\nPercentage: {per_a1}\n")
+
+    # Reading for a0
+    raw_a0 = get_moisture_raw("a0")
+    per_a0 = get_moisture("a0")
+    print(f"a0 \nRaw: {raw_a0}\nPercentage: {per_a0}\n")
