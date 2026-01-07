@@ -251,11 +251,17 @@ def main():
                     save_state(state)
                     
                     send_error_email("Smart System Safety Timeout", "Safety timeout reached. Check sensor. System disabled until manual reset.")
-                    events.append("EMERGENCY_SMART_TIMEOUT")
-                    reasons.append("Safety timeout reached. Check sensor.")
+                    
+                    # Log emergency timeout immediately
+                    cycle_water_used = run_pump('smart')
+                    log_to_csv(sensor_data, "EMERGENCY_SMART_TIMEOUT", "Safety timeout reached. Check sensor.", cycle_water_used)
                     break # Stop watering immediately
         
-                water_used += run_pump('smart')
+                cycle_water_used = run_pump('smart')
+                # Log each watering cycle immediately
+                log_to_csv(sensor_data, "WATER_SMART_CYCLE", f"Deep soak cycle {cycles + 1}/{MAX_PUMP_CYCLES}. Moisture: {sensor_data['Soil_Moisture_Smart']}%", cycle_water_used)
+                water_used += cycle_water_used
+                
                 time.sleep(10) # Wait for soil absorption
                 cycles += 1
                 sensor_data['Soil_Moisture_Smart'] = check_smart_sensor()
@@ -263,7 +269,7 @@ def main():
             if safety == "CLEAR":
                 send_water_event_msg(pump="Smart", recipient_email="hi@veerbajaj.com")
                 events.append("WATER_SMART_EVENT")
-                reasons.append("Moisture too low on smart system.")
+                reasons.append(f"Moisture too low on smart system. Completed {cycles} cycles.")
 
         # 3. Dumb System Logic (timer-based)
         now = datetime.now()
