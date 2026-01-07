@@ -31,13 +31,12 @@ from adafruit_ads1x15.analog_in import AnalogIn
 # ============================================================================
 
 # Sensor A (A0) calibration voltages
-SENSOR_A_DRY_VOLTAGE = 2.73      # 0% moisture
-SENSOR_A_WET_VOLTAGE = 1.3958     # 100% moisture
+SENSOR_A_DRY_VOLTAGE = 2.808481  # 0% moisture
+SENSOR_A_WET_VOLTAGE = 1.354456  # 100% moisture
 
 # Sensor B (A1) calibration voltages
-SENSOR_B_DRY_VOLTAGE = 2.6755     # 0% moisture
-SENSOR_B_WET_VOLTAGE = 1.3515     # 100% moisture
-
+SENSOR_B_DRY_VOLTAGE = 2.812081  # 0% moisture
+SENSOR_B_WET_VOLTAGE = 1.334206  # 100% moisture
 # ============================================================================
 # ADC SETUP
 # ============================================================================
