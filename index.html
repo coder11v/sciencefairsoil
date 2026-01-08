@@ -214,6 +214,132 @@
             font-size: 1.1em;
         }
 
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #1a1f26;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 2px solid #4CAF50;
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+            border-radius: 6px;
+            background: #252a31;
+            color: #e0e0e0;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+        }
+
+        .modal-btn-secondary {
+            background: #333;
+            color: #e0e0e0;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #444;
+        }
+
+        .modal-output {
+            background: #0f1419;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #4CAF50;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: none;
+        }
+
+        .modal-output.show {
+            display: block;
+        }
+
+        .modal-loading {
+            text-align: center;
+            color: #4CAF50;
+            display: none;
+            margin: 20px 0;
+        }
+
+        .modal-loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
         .manual-refresh-btn {
             padding: 8px 15px;
             background: #4CAF50;
@@ -472,12 +598,6 @@
             <button onclick="downloadData()" title="Download plant data as CSV">
                 📥 Download CSV
             </button>
-
-
-
-
-
-
             <div class="refresh-controls">
                 <div class="refresh-toggle active" id="refreshToggle" onclick="toggleAutoRefresh()"
                     title="Click to toggle auto-refresh">
@@ -487,6 +607,10 @@
                 <button class="manual-refresh-btn" id="manualRefreshBtn" onclick="manualRefresh()"
                     title="Refresh data now">
                     🔄 Refresh
+                </button>
+                <button class="manual-refresh-btn" id="testSensorBtn" onclick="openTestSensorModal()"
+                    title="Test sensor data">
+                    🧪 Test Sensors
                 </button>
             </div>
             <div class="status-indicator">
@@ -544,6 +668,24 @@
                 </tbody>
             </table>
             <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+    <!-- Test Sensor Modal -->
+    <div class="modal" id="testSensorModal">
+        <div class="modal-content">
+            <div class="modal-header">🧪 Test Sensor Data</div>
+            <input type="password" class="modal-input" id="testPasscodeInput" placeholder="Enter passcode"
+                onkeypress="if(event.key==='Enter') runTestSensor()">
+            <div class="modal-loading" id="testLoading">
+                <div class="spinner"></div>
+                <div>Running test...</div>
+            </div>
+            <div class="modal-output" id="testOutput"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" onclick="closeTestSensorModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="runTestSensor()">Run Test</button>
+            </div>
         </div>
     </div>
 
@@ -961,6 +1103,62 @@
         });
 
         document.getElementById('timeSlider').addEventListener('input', applyFilters);
+
+        // Test Sensor Modal Functions
+        function openTestSensorModal() {
+            const modal = document.getElementById('testSensorModal');
+            modal.classList.add('show');
+            document.getElementById('testPasscodeInput').focus();
+            document.getElementById('testPasscodeInput').value = '';
+            document.getElementById('testOutput').classList.remove('show');
+            document.getElementById('testLoading').classList.remove('show');
+        }
+
+        function closeTestSensorModal() {
+            const modal = document.getElementById('testSensorModal');
+            modal.classList.remove('show');
+        }
+
+        async function runTestSensor() {
+            const passcode = document.getElementById('testPasscodeInput').value;
+            const output = document.getElementById('testOutput');
+            const loading = document.getElementById('testLoading');
+
+            if (!passcode) {
+                alert('Please enter the passcode');
+                return;
+            }
+
+            loading.classList.add('show');
+            output.classList.remove('show');
+
+            try {
+                const response = await fetch(`./main/test/test_sensors.py?passcode=${encodeURIComponent(passcode)}`);
+                const data = await response.json();
+
+                loading.classList.remove('show');
+
+                if (data.success) {
+                    output.textContent = data.output;
+                    output.classList.add('show');
+                } else {
+                    output.textContent = `Error: ${data.error}`;
+                    output.classList.add('show');
+                }
+            } catch (error) {
+                loading.classList.remove('show');
+                output.textContent = `Connection Error: ${error.message}`;
+                output.classList.add('show');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('testSensorModal');
+            if (e.target === modal) {
+                closeTestSensorModal();
+            }
+        });
     </script>
 </body>
 
