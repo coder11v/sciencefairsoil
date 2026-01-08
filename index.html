@@ -1133,7 +1133,7 @@
             output.classList.remove('show');
 
             try {
-                const response = await fetch(`./main/test/test_sensors.sh?passcode=${encodeURIComponent(passcode)}`);
+                const response = await fetch(`http://localhost:6767/api/test-sensors?passcode=${encodeURIComponent(passcode)}`);
                 const data = await response.json();
 
                 loading.classList.remove('show');
