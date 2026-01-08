@@ -5,6 +5,7 @@ import os
 import subprocess
 import json
 from urllib.parse import urlparse, parse_qs
+from pathlib import Path
 
 PORT = 6767
 
@@ -17,7 +18,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             query_params = parse_qs(parsed_path.query)
             passcode = query_params.get('passcode', [''])[0]
             
-            if passcode != 'MusselGrowth':
+            if passcode != Path("/main/secrets/sp.txt").read_text().strip():
                 self.send_response(401)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
