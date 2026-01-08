@@ -18,7 +18,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             query_params = parse_qs(parsed_path.query)
             passcode = query_params.get('passcode', [''])[0]
             
-            if passcode != Path("/main/secrets/sp.txt").read_text().strip():
+            if passcode != Path("/home/vib/Soil/main/secrets/sp.txt").read_text().strip():
                 self.send_response(401)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
@@ -51,4 +51,5 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 os.chdir(os.path.expanduser('~/Soil'))
 with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
     print(f"Server running at http://localhost:{PORT}")
+    print(Path("/home/vib/Soil/main/secrets/sp.txt").read_text().strip())
     httpd.serve_forever()
