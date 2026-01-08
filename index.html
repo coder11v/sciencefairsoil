@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>sciencefairsoil | Docs</title>
+  <title>Veer Bajaj's Soil Project | Docs</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     :root {
@@ -67,6 +67,9 @@
     /* Content Area */
     main { padding: 2rem; overflow-y: auto; }
     #content { max-width: 800px; margin: 0 auto; line-height: 1.6; }
+    #content.live-view { max-width: 100%; padding: 0; margin: 0; width: 100%; height: 100%; }
+    main:has(#content.live-view) { padding: 0; overflow: hidden; }
+    #live-frame { display: block; width: 100%; height: 100%; }
 
     /* Navigation / Search */
     .search-box { padding: 1rem; }
@@ -82,6 +85,14 @@
     .nav-link:hover { background: var(--hover); }
     .nav-link.active { background: #1f6feb; color: white; }
 
+    /* Special styling for Live page */
+    .nav-link.live-page { 
+      background: linear-gradient(135deg, #238636 0%, #1a6e2c 100%);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .nav-link.live-page:hover { background: linear-gradient(135deg, #2ea043 0%, #1f7d38 100%); }
+
     /* Sidebar Items */
     .sidebar-section { margin-bottom: 1.5rem; }
     .sidebar-section h2 { 
@@ -93,6 +104,35 @@
     .item-link { color: var(--accent); text-decoration: none; font-weight: 600; }
     .item-meta { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 4px; }
     .avatar { width: 14px; height: 14px; border-radius: 50%; }
+
+    /* Table of Contents */
+    .toc-section { margin-bottom: 1.5rem; }
+    .toc-link {
+      display: block; padding: 6px 8px; color: var(--accent);
+      text-decoration: none; font-size: 0.85rem; border-radius: 4px;
+    }
+    .toc-link:hover { background: var(--hover); }
+    .toc-link.toc-h2 { padding-left: 16px; font-size: 0.8rem; }
+    .toc-link.toc-h3 { padding-left: 24px; font-size: 0.75rem; color: var(--text-muted); }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    .empty-state h2 {
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Live iframe */
+    #live-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: var(--bg);
+    }
 
     /* Sidebar Footer / Data Link */
     .sidebar-footer {
@@ -163,6 +203,11 @@
   </main>
 
   <aside id="sidebar-right">
+    <div id="toc-section" class="toc-section" style="display: none;">
+      <h2>Contents</h2>
+      <div id="toc"></div>
+    </div>
+
     <div class="sidebar-section">
       <h2>Recent Commits</h2>
       <div id="commits"></div>
@@ -172,9 +217,7 @@
       <div id="issues"></div>
     </div>
 
-    <div class="sidebar-footer">
-      <a href="#" id="view-data-link" target="_blank" class="view-data-btn loading">Fetching Data Link...</a>
-    </div>
+    <div class="sidebar-footer"></div>
   </aside>
 
   <script>
@@ -182,6 +225,7 @@
     const repo = "sciencefairsoil";
     const rawBase = `https://raw.githubusercontent.com/wiki/${user}/${repo}`;
     const wikiFiles = ["Home", "My-Hardware", "Pump-Calib", "Snap-Peas", "Specs-Product-Requirements", "Wiring-Guide", "Workflow", "zero-to-sensors"];
+    let ngrokUrl = null;
 
     // UI CONTROLS
     function toggleSidebar(id) {
@@ -225,7 +269,8 @@
         
         const urlMatch = text.match(/https?:\/\/[^\s]+/);
         if (urlMatch) {
-          linkBtn.href = urlMatch[0];
+          ngrokUrl = urlMatch[0];
+          linkBtn.href = ngrokUrl;
           linkBtn.textContent = "View Live Data";
           linkBtn.classList.remove('loading');
         } else {
@@ -239,6 +284,15 @@
     function renderLinks(files) {
       const list = document.getElementById('page-list');
       list.innerHTML = '';
+      
+      // Add Live page first
+      const liveLink = document.createElement('div');
+      liveLink.className = 'nav-link live-page' + (window.location.hash.substring(1) === 'Live' ? ' active' : '');
+      liveLink.textContent = '🔴 Live';
+      liveLink.onclick = () => { loadPage('Live'); closeAll(); };
+      list.appendChild(liveLink);
+      
+      // Add wiki pages
       files.forEach(name => {
         const a = document.createElement('div');
         a.className = 'nav-link' + (window.location.hash.substring(1) === name ? ' active' : '');
@@ -248,19 +302,98 @@
       });
     }
 
+    function generateTOC(html) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      const headings = tempDiv.querySelectorAll('h1, h2, h3');
+      
+      if (headings.length === 0) {
+        document.getElementById('toc-section').style.display = 'none';
+        return;
+      }
+
+      const tocDiv = document.getElementById('toc');
+      tocDiv.innerHTML = '';
+      
+      headings.forEach((heading, index) => {
+        const level = heading.tagName.toLowerCase();
+        const text = heading.textContent;
+        const id = `heading-${index}`;
+        heading.id = id;
+        
+        const link = document.createElement('a');
+        link.href = `#${id}`;
+        link.className = `toc-link toc-${level}`;
+        link.textContent = text;
+        link.onclick = closeAll;
+        
+        tocDiv.appendChild(link);
+      });
+      
+      document.getElementById('toc-section').style.display = 'block';
+    }
+
     async function loadPage(name) {
       const contentDiv = document.getElementById('content');
-      const cacheBuster = `?t=${new Date().getTime()}`;
       window.location.hash = name;
       contentDiv.innerHTML = "<em>Loading...</em>";
+      contentDiv.classList.remove('live-view');
+      
+      // Special handling for Live page
+      if (name === 'Live') {
+        if (!ngrokUrl) {
+          contentDiv.innerHTML = `
+            <div class="empty-state">
+              <h2>📡 Live Data</h2>
+              <p>Attempting to connect to live data stream...</p>
+            </div>
+          `;
+          // Try to fetch the URL again
+          await fetchNgrokUrl();
+        }
+        
+        if (ngrokUrl) {
+          contentDiv.classList.add('live-view');
+          contentDiv.innerHTML = `<iframe id="live-frame" src="${ngrokUrl}"></iframe>`;
+        } else {
+          contentDiv.innerHTML = `
+            <div class="empty-state">
+              <h2>📡 Live Data Unavailable</h2>
+              <p>Could not connect to the live data stream. The ngrok tunnel may be offline.</p>
+              <p style="font-size: 0.85rem; margin-top: 1rem;">Make sure the secret file in the wiki contains a valid URL.</p>
+            </div>
+          `;
+        }
+        
+        document.querySelectorAll('.nav-link').forEach(l => {
+          l.classList.toggle('active', l.textContent.includes('Live'));
+        });
+        return;
+      }
+
+      // Regular wiki page loading
+      const cacheBuster = `?t=${new Date().getTime()}`;
       try {
         const res = await fetch(`${rawBase}/${name}.md${cacheBuster}`);
+        if (!res.ok) throw new Error('Not found');
+        
         const md = await res.text();
-        contentDiv.innerHTML = marked.parse(md);
+        const html = marked.parse(md);
+        contentDiv.innerHTML = html;
+        generateTOC(html);
+        
         document.querySelectorAll('.nav-link').forEach(l => {
           l.classList.toggle('active', l.textContent.replace(/ /g, '-') === name);
         });
-      } catch (e) { contentDiv.innerHTML = `<h1>Error</h1><p>Could not load ${name}.md</p>`; }
+      } catch (e) { 
+        contentDiv.innerHTML = `
+          <div class="empty-state">
+            <h2>Page Not Found</h2>
+            <p>Could not load ${name}.md from the wiki.</p>
+            <p style="font-size: 0.85rem; margin-top: 1rem;">This page may not exist or the wiki might be empty.</p>
+          </div>
+        `;
+      }
     }
 
     // GITHUB LOGIC
@@ -269,12 +402,18 @@
       try {
         const res = await fetch(`https://api.github.com/repos/${user}/${repo}/commits`);
         const data = await res.json();
+        
+        if (data.message === 'Not Found' || !Array.isArray(data)) {
+          container.innerHTML = "<div class='item-meta'>No commits yet</div>";
+          return;
+        }
+        
         container.innerHTML = data.slice(0, 5).map(c => `
           <div class="list-item">
             <a href="${c.html_url}" target="_blank" class="item-link">${c.commit.message.split('\n')[0]}</a>
             <div class="item-meta"><img class="avatar" src="${c.author?.avatar_url || ''}">${c.commit.author.name}</div>
           </div>`).join('');
-      } catch (e) { container.innerHTML = "Error loading."; }
+      } catch (e) { container.innerHTML = "<div class='item-meta'>Error loading</div>"; }
     }
 
     async function fetchIssues() {
@@ -282,12 +421,18 @@
       try {
         const res = await fetch(`https://api.github.com/repos/${user}/${repo}/issues?state=open`);
         const data = await res.json();
+        
+        if (!Array.isArray(data)) {
+          container.innerHTML = "<div class='item-meta'>No open issues</div>";
+          return;
+        }
+        
         container.innerHTML = data.length ? data.slice(0, 5).map(i => `
           <div class="list-item">
             <a href="${i.html_url}" target="_blank" class="item-link">#${i.number} ${i.title}</a>
             <div class="item-meta">by ${i.user.login}</div>
           </div>`).join('') : "<div class='item-meta'>No open issues</div>";
-      } catch (e) { container.innerHTML = "Error loading."; }
+      } catch (e) { container.innerHTML = "<div class='item-meta'>Error loading</div>"; }
     }
 
     init();
