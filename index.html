@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plant Watering Data - Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
     <style>
         * {
             margin: 0;
@@ -517,6 +518,31 @@
             align-items: center;
         }
 
+        .version-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+        }
+
+        .version-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .version-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2em;
@@ -546,399 +572,515 @@
                 justify-content: center;
                 flex-wrap: wrap;
             }
+
+            .version-switch {
+                position: static;
+                margin-bottom: 20px;
+                text-align: center;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>🌱 Plant Watering Data</h1>
-            <p class="subtitle">Smart Soil Moisture Monitoring System by Veer Bajaj</p>
-            <div class="demo-banner" id="demoBanner">
-                <span class="demo-icon">⚠️</span>
-                <span>Showing demo data - live data file not found</span>
-            </div>
-        </header>
 
-        <div class="controls">
-            <div class="control-group">
-                <label for="rowsPerPage">Rows per page:</label>
-                <select id="rowsPerPage">
-                    <option value="10">10</option>
-                    <option value="25" selected>25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label for="eventFilter">Filter by event:</label>
-                <select id="eventFilter">
-                    <option value="">All Events</option>
-                    <option value="WATER_SMART_EVENT">Water Smart Event</option>
-                    <option value="WATER_DUMB_EVENT">Water Dumb Event</option>
-                    <option value="Routine Check">Routine Check</option>
-                    <option value="SYSTEM_BOOT">System Boot</option>
-                </select>
-            </div>
-            <button onclick="resetFilters()">Reset Filters</button>
-            <div class="spacer"></div>
-            <div class="control-group">
-                <label for="dataSource">Data Source:</label>
-                <select id="dataSource">
-                    <option value="live">Live Data</option>
-                    <option value="demo">Demo Data</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label for="timeSlider">🕒 Time Machine:</label>
-                <input type="range" id="timeSlider" min="0" max="1440" value="0" step="1" style="width: 200px;">
-                <span id="timeOffsetLabel" style="min-width: 80px; font-weight: bold; color: #4CAF50;">Live</span>
-            </div>
-            <button onclick="downloadData()" title="Download plant data as CSV">
-                📥 Download CSV
-            </button>
-            <div class="refresh-controls">
-                <div class="refresh-toggle active" id="refreshToggle" onclick="toggleAutoRefresh()"
-                    title="Click to toggle auto-refresh">
-                    <span class="refresh-icon">⚙️</span>
-                    <span>Auto-Refresh ON</span>
+    <body>
+        <div class="container">
+            <header>
+                <h1>🌱 Plant Watering Data</h1>
+                <p class="subtitle">Smart Soil Moisture Monitoring System by Veer Bajaj</p>
+                <div class="demo-banner" id="demoBanner">
+                    <span class="demo-icon">⚠️</span>
+                    <span>Showing demo data - live data file not found</span>
                 </div>
-                <button class="manual-refresh-btn" id="manualRefreshBtn" onclick="manualRefresh()"
-                    title="Refresh data now">
-                    🔄 Refresh
+            </header>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="rowsPerPage">Rows per page:</label>
+                    <select id="rowsPerPage">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="eventFilter">Filter by event:</label>
+                    <select id="eventFilter">
+                        <option value="">All Events</option>
+                        <option value="WATER_SMART_EVENT">Water Smart Event</option>
+                        <option value="WATER_DUMB_EVENT">Water Dumb Event</option>
+                        <option value="Routine Check">Routine Check</option>
+                        <option value="SYSTEM_BOOT">System Boot</option>
+                    </select>
+                </div>
+                <button onclick="resetFilters()">Reset Filters</button>
+                <div class="spacer"></div>
+                <div class="control-group">
+                    <label for="dataSource">Data Source:</label>
+                    <select id="dataSource">
+                        <option value="live">Live Data</option>
+                        <option value="demo">Demo Data</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="timeSlider">🕒 Time Machine:</label>
+                    <input type="range" id="timeSlider" min="0" max="1440" value="0" step="1" style="width: 200px;">
+                    <span id="timeOffsetLabel" style="min-width: 80px; font-weight: bold; color: #4CAF50;">Live</span>
+                </div>
+                <button onclick="downloadData()" title="Download plant data as CSV">
+                    📥 Download CSV
                 </button>
-                <button class="manual-refresh-btn" id="testSensorBtn" onclick="openTestSensorModal()"
-                    title="Test sensor data">
-                    🧪 Test Sensors
-                </button>
+                <div class="refresh-controls">
+                    <div class="refresh-toggle active" id="refreshToggle" onclick="toggleAutoRefresh()"
+                        title="Click to toggle auto-refresh">
+                        <span class="refresh-icon">⚙️</span>
+                        <span>Auto-Refresh ON</span>
+                    </div>
+                    <button class="manual-refresh-btn" id="manualRefreshBtn" onclick="manualRefresh()"
+                        title="Refresh data now">
+                        🔄 Refresh
+                    </button>
+                    <button class="manual-refresh-btn" id="testSensorBtn" onclick="openTestSensorModal()"
+                        title="Test sensor data">
+                        🧪 Test Sensors
+                    </button>
+                </div>
+                <div class="control-group">
+                    <label for="chartLibrary">📊 Chart Mode:</label>
+                    <select id="chartLibrary">
+                        <option value="chartjs">Regular</option>
+                        <option value="plotly">Advanced</option>
+                    </select>
+                </div>
+                <div class="spacer"></div>
+                <div class="control-group">
+                    <label for="rowsPerPage">Rows per page:</label>
+                    <select id="rowsPerPage">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <div>
+                        <div>Live</div>
+                        <div id="lastUpdate" style="font-size: 0.85em; opacity: 0.8;">Loading...</div>
+                    </div>
+                </div>
             </div>
-            <div class="status-indicator">
-                <span class="status-dot" id="statusDot"></span>
-                <div>
-                    <div>Live</div>
-                    <div id="lastUpdate" style="font-size: 0.85em; opacity: 0.8;">Loading...</div>
+
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Records</div>
+                    <div class="stat-value" id="totalRecords">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Water Events</div>
+                    <div class="stat-value" id="waterEvents">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Smart Moisture</div>
+                    <div class="stat-value" id="avgSmartMoisture">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Dumb Moisture</div>
+                    <div class="stat-value" id="avgDumbMoisture">0%</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Smart vs Dumb Moisture Over Time</div>
+                    <div id="moistureChartPlotly" style="height: 400px; width: 100%; display: none;"></div>
+                    <canvas id="moistureChartJS"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Event Distribution</div>
+                    <div id="eventChartPlotly" style="height: 400px; width: 100%; display: none;"></div>
+                    <canvas id="eventChartJS"></canvas>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Smart Moisture</th>
+                            <th>Dumb Moisture</th>
+                            <th>Event</th>
+                            <th>Reason</th>
+                            <th>Water Used (L)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+
+        <!-- Test Sensor Modal -->
+        <div class="modal" id="testSensorModal">
+            <div class="modal-content">
+                <div class="modal-header">🧪 Test Sensor Data</div>
+                <input type="password" class="modal-input" id="testPasscodeInput" placeholder="Enter passcode"
+                    onkeypress="if(event.key==='Enter') runTestSensor()">
+                <div class="modal-loading" id="testLoading">
+                    <div class="spinner"></div>
+                    <div>Running test...</div>
+                </div>
+                <div class="modal-output" id="testOutput"></div>
+                <div class="modal-buttons">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeTestSensorModal()">Cancel</button>
+                    <button class="modal-btn modal-btn-primary" onclick="runTestSensor()">Run Test</button>
                 </div>
             </div>
         </div>
 
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <div class="stat-label">Total Records</div>
-                <div class="stat-value" id="totalRecords">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Water Events</div>
-                <div class="stat-value" id="waterEvents">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Avg Smart Moisture</div>
-                <div class="stat-value" id="avgSmartMoisture">0%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Avg Dumb Moisture</div>
-                <div class="stat-value" id="avgDumbMoisture">0%</div>
-            </div>
-        </div>
+        <script>
+            let allData = [];
+            let filteredData = [];
+            let currentPage = 1;
+            let rowsPerPage = 25;
+            let moistureChart = null;
+            let eventChart = null;
+            let isDemoData = false;
+            let refreshInterval = null;
+            let autoRefreshEnabled = true;
+            let timeOffsetMinutes = 0;
+            let chartLibrary = 'chartjs';
 
-        <div class="charts-grid">
-            <div class="chart-card">
-                <div class="chart-title">Smart vs Dumb Moisture Over Time</div>
-                <canvas id="moistureChart"></canvas>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">Event Distribution</div>
-                <canvas id="eventChart"></canvas>
-            </div>
-        </div>
+            function parseDate(dateStr) {
+                // Converts "YYYY-MM-DD HH:MM:SS" to a Date object
+                if (!dateStr) return new Date(0);
+                return new Date(dateStr.replace(' ', 'T'));
+            }
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Smart Moisture</th>
-                        <th>Dumb Moisture</th>
-                        <th>Event</th>
-                        <th>Reason</th>
-                        <th>Water Used (L)</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                </tbody>
-            </table>
-            <div class="pagination" id="pagination"></div>
-        </div>
-    </div>
+            // Fetch and parse CSV
+            async function loadData() {
+                try {
+                    const dataSource = document.getElementById('dataSource').value;
+                    let response;
 
-    <!-- Test Sensor Modal -->
-    <div class="modal" id="testSensorModal">
-        <div class="modal-content">
-            <div class="modal-header">🧪 Test Sensor Data</div>
-            <input type="password" class="modal-input" id="testPasscodeInput" placeholder="Enter passcode"
-                onkeypress="if(event.key==='Enter') runTestSensor()">
-            <div class="modal-loading" id="testLoading">
-                <div class="spinner"></div>
-                <div>Running test...</div>
-            </div>
-            <div class="modal-output" id="testOutput"></div>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-secondary" onclick="closeTestSensorModal()">Cancel</button>
-                <button class="modal-btn modal-btn-primary" onclick="runTestSensor()">Run Test</button>
-            </div>
-        </div>
-    </div>
+                    if (dataSource === 'demo') {
+                        response = await fetch('./main/out/archive-demo/plant_data.csv');
+                        isDemoData = true;
+                        document.getElementById('demoBanner').classList.add('show');
+                    } else {
+                        response = await fetch('./main/out/plant_data.csv');
+                        isDemoData = false;
+                        document.getElementById('demoBanner').classList.remove('show');
+                    }
 
-    <script>
-        let allData = [];
-        let filteredData = [];
-        let currentPage = 1;
-        let rowsPerPage = 25;
-        let moistureChart = null;
-        let eventChart = null;
-        let isDemoData = false;
-        let refreshInterval = null;
-        let autoRefreshEnabled = true;
-        let timeOffsetMinutes = 0;
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
 
-        function parseDate(dateStr) {
-            // Converts "YYYY-MM-DD HH:MM:SS" to a Date object
-            if (!dateStr) return new Date(0);
-            return new Date(dateStr.replace(' ', 'T'));
-        }
+                    const text = await response.text();
+                    parseCSV(text);
 
-        // Fetch and parse CSV
-        async function loadData() {
-            try {
-                const dataSource = document.getElementById('dataSource').value;
-                let response;
+                    applyFilters();
+                    updateLastRefreshTime();
+                    setStatusDotReady();
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    document.getElementById('tableBody').innerHTML = '<tr><td colspan="6">Error loading data. Check that the CSV files exist in ./main/out/ or ./main/out/archive-demo/</td></tr>';
+                    setStatusDotError();
+                }
+            }
 
-                if (dataSource === 'demo') {
-                    response = await fetch('./main/out/archive-demo/plant_data.csv');
-                    isDemoData = true;
-                    document.getElementById('demoBanner').classList.add('show');
+            function parseCSV(text) {
+                const lines = text.trim().split('\n');
+                if (lines.length < 2) {
+                    console.error('CSV is empty or malformed');
+                    return;
+                }
+
+                allData = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    if (values.length < 4) continue;
+
+                    const timeStr = values[0];
+                    const timestamp = parseDate(timeStr).getTime();
+
+                    allData.push({
+                        timestamp: timeStr,
+                        timestampMs: timestamp,
+                        smartMoisture: parseFloat(values[1]),
+                        dumbMoisture: parseFloat(values[2]),
+                        event: values[3],
+                        reason: values[4],
+                        waterUsed: values[5]
+                    });
+                }
+
+                // Update Time Machine slider range based on data
+                if (allData.length > 1) {
+                    const earliest = allData[0].timestampMs;
+                    const latest = allData[allData.length - 1].timestampMs;
+                    const totalMinutes = Math.floor((latest - earliest) / (60 * 1000));
+
+                    const slider = document.getElementById('timeSlider');
+                    slider.max = Math.max(totalMinutes, 1440); // At least 24h or more if data spans further
+                }
+
+                filteredData = [...allData];
+            }
+
+            function updateStats() {
+                const smartMoistures = filteredData.map(d => d.smartMoisture).filter(v => !isNaN(v));
+                const dumbMoistures = filteredData.map(d => d.dumbMoisture).filter(v => !isNaN(v));
+                const waterEvents = filteredData.filter(d => d.event.includes('WATER')).length;
+
+                document.getElementById('totalRecords').textContent = filteredData.length;
+                document.getElementById('waterEvents').textContent = waterEvents;
+                document.getElementById('avgSmartMoisture').textContent =
+                    smartMoistures.length > 0 ? (smartMoistures.reduce((a, b) => a + b, 0) / smartMoistures.length).toFixed(1) + '%' : '0%';
+                document.getElementById('avgDumbMoisture').textContent =
+                    dumbMoistures.length > 0 ? (dumbMoistures.reduce((a, b) => a + b, 0) / dumbMoistures.length).toFixed(1) + '%' : '0%';
+            }
+
+            function createCharts() {
+                if (filteredData.length === 0) return;
+
+                const library = document.getElementById('chartLibrary').value;
+                const plotlyMoisture = document.getElementById('moistureChartPlotly');
+                const plotlyEvent = document.getElementById('eventChartPlotly');
+                const classicMoisture = document.getElementById('moistureChartJS');
+                const classicEvent = document.getElementById('eventChartJS');
+
+                if (library === 'plotly') {
+                    plotlyMoisture.style.display = 'block';
+                    plotlyEvent.style.display = 'block';
+                    classicMoisture.style.display = 'none';
+                    classicEvent.style.display = 'none';
+                    createPlotlyCharts();
                 } else {
-                    response = await fetch('./main/out/plant_data.csv');
-                    isDemoData = false;
-                    document.getElementById('demoBanner').classList.remove('show');
+                    plotlyMoisture.style.display = 'none';
+                    plotlyEvent.style.display = 'none';
+                    classicMoisture.style.display = 'block';
+                    classicEvent.style.display = 'block';
+                    createChartJSCharts();
                 }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const text = await response.text();
-                parseCSV(text);
-
-                applyFilters();
-                updateLastRefreshTime();
-                setStatusDotReady();
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('tableBody').innerHTML = '<tr><td colspan="6">Error loading data. Check that the CSV files exist in ./main/out/ or ./main/out/archive-demo/</td></tr>';
-                setStatusDotError();
-            }
-        }
-
-        function parseCSV(text) {
-            const lines = text.trim().split('\n');
-            if (lines.length < 2) {
-                console.error('CSV is empty or malformed');
-                return;
             }
 
-            allData = [];
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',');
-                if (values.length < 4) continue;
+            function createPlotlyCharts() {
+                const sampleSize = Math.max(1, Math.floor(filteredData.length / 100));
+                const sampledData = filteredData.filter((_, i) => i % sampleSize === 0);
 
-                const timeStr = values[0];
-                const timestamp = parseDate(timeStr).getTime();
+                const traceSmart = {
+                    x: sampledData.map(d => d.timestamp),
+                    y: sampledData.map(d => d.smartMoisture),
+                    name: 'Smart Sensor',
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: { color: '#667eea', width: 3, shape: 'spline' },
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(102, 126, 234, 0.1)',
+                    hovertemplate: '<b>%{x}</b><br>Smart: %{y:.2f}%<extra></extra>'
+                };
 
-                allData.push({
-                    timestamp: timeStr,
-                    timestampMs: timestamp,
-                    smartMoisture: parseFloat(values[1]),
-                    dumbMoisture: parseFloat(values[2]),
-                    event: values[3],
-                    reason: values[4],
-                    waterUsed: values[5]
+                const traceDumb = {
+                    x: sampledData.map(d => d.timestamp),
+                    y: sampledData.map(d => d.dumbMoisture),
+                    name: 'Dumb Sensor',
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: { color: '#764ba2', width: 3, shape: 'spline' },
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(118, 75, 162, 0.1)',
+                    hovertemplate: '<b>%{x}</b><br>Dumb: %{y:.2f}%<extra></extra>'
+                };
+
+                const layoutMoisture = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#e0e0e0', family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif' },
+                    margin: { t: 40, b: 40, l: 50, r: 20 },
+                    xaxis: { gridcolor: '#252a31', linecolor: '#252a31', title: 'Time' },
+                    yaxis: { gridcolor: '#252a31', linecolor: '#252a31', range: [0, 100], ticksuffix: '%', title: 'Moisture Level' },
+                    legend: { orientation: 'h', y: 1.1, x: 0.5, xanchor: 'center' },
+                    hovermode: 'x unified'
+                };
+
+                Plotly.newPlot('moistureChartPlotly', [traceSmart, traceDumb], layoutMoisture, { responsive: true, displayModeBar: false });
+
+                const eventCounts = {};
+                filteredData.forEach(d => { eventCounts[d.event] = (eventCounts[d.event] || 0) + 1; });
+
+                const traceEvent = {
+                    labels: Object.keys(eventCounts),
+                    values: Object.values(eventCounts),
+                    type: 'pie',
+                    hole: 0.4,
+                    marker: {
+                        colors: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#4CAF50', '#FFC107'],
+                        line: { color: '#1a1f26', width: 2 }
+                    },
+                    textinfo: 'percent'
+                };
+
+                const layoutEvent = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#e0e0e0', family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif' },
+                    margin: { t: 20, b: 20, l: 20, r: 20 },
+                    showlegend: true,
+                    legend: { orientation: 'h', y: -0.1, x: 0.5, xanchor: 'center' }
+                };
+
+                Plotly.newPlot('eventChartPlotly', [traceEvent], layoutEvent, { responsive: true, displayModeBar: false });
+            }
+
+            function createChartJSCharts() {
+                if (filteredData.length === 0) return;
+
+                // Moisture Chart - show samples to avoid overcrowding
+                const sampleSize = Math.max(1, Math.floor(filteredData.length / 100));
+                const sampledData = filteredData.filter((_, i) => i % sampleSize === 0);
+
+                const moistureCtx = document.getElementById('moistureChartJS').getContext('2d');
+                if (moistureChart) moistureChart.destroy();
+
+                moistureChart = new Chart(moistureCtx, {
+                    type: 'line',
+                    data: {
+                        labels: sampledData.map(d => d.timestamp.split(' ')[1]),
+                        datasets: [
+                            {
+                                label: 'Smart Sensor',
+                                data: sampledData.map(d => d.smartMoisture),
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Dumb Sensor',
+                                data: sampledData.map(d => d.dumbMoisture),
+                                borderColor: '#764ba2',
+                                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top', labels: { color: '#e0e0e0' } }
+                        },
+                        scales: {
+                            x: { grid: { color: '#252a31' }, ticks: { color: '#999' } },
+                            y: {
+                                grid: { color: '#252a31' },
+                                ticks: { color: '#999', callback: (v) => v + '%' },
+                                min: 0,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+
+                // Event Distribution Chart
+                const eventCounts = {};
+                filteredData.forEach(d => {
+                    eventCounts[d.event] = (eventCounts[d.event] || 0) + 1;
+                });
+
+                const eventCtx = document.getElementById('eventChartJS').getContext('2d');
+                if (eventChart) eventChart.destroy();
+
+                eventChart = new Chart(eventCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(eventCounts),
+                        datasets: [{
+                            data: Object.values(eventCounts),
+                            backgroundColor: [
+                                '#667eea', '#764ba2', '#f093fb', '#4facfe', '#4CAF50', '#FFC107'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#e0e0e0' } }
+                        },
+                        cutout: '70%'
+                    }
                 });
             }
 
-            // Update Time Machine slider range based on data
-            if (allData.length > 1) {
-                const earliest = allData[0].timestampMs;
-                const latest = allData[allData.length - 1].timestampMs;
-                const totalMinutes = Math.floor((latest - earliest) / (60 * 1000));
+            function applyFilters() {
+                if (allData.length === 0) return;
 
-                const slider = document.getElementById('timeSlider');
-                slider.max = Math.max(totalMinutes, 1440); // At least 24h or more if data spans further
-            }
+                const eventFilter = document.getElementById('eventFilter').value;
+                const sliderValue = parseInt(document.getElementById('timeSlider').value);
+                timeOffsetMinutes = sliderValue;
 
-            filteredData = [...allData];
-        }
+                const latestDataPoint = allData[allData.length - 1];
+                const latestTimeMs = latestDataPoint.timestampMs;
+                const cutoffTimeMs = latestTimeMs - (timeOffsetMinutes * 60 * 1000);
 
-        function updateStats() {
-            const smartMoistures = filteredData.map(d => d.smartMoisture).filter(v => !isNaN(v));
-            const dumbMoistures = filteredData.map(d => d.dumbMoisture).filter(v => !isNaN(v));
-            const waterEvents = filteredData.filter(d => d.event.includes('WATER')).length;
+                // Update label
+                const label = document.getElementById('timeOffsetLabel');
+                if (timeOffsetMinutes === 0) {
+                    label.textContent = 'Live';
+                    label.style.color = '#4CAF50';
+                } else {
+                    label.textContent = `-${timeOffsetMinutes}m`;
+                    label.style.color = '#FFC107';
+                }
 
-            document.getElementById('totalRecords').textContent = filteredData.length;
-            document.getElementById('waterEvents').textContent = waterEvents;
-            document.getElementById('avgSmartMoisture').textContent =
-                smartMoistures.length > 0 ? (smartMoistures.reduce((a, b) => a + b, 0) / smartMoistures.length).toFixed(1) + '%' : '0%';
-            document.getElementById('avgDumbMoisture').textContent =
-                dumbMoistures.length > 0 ? (dumbMoistures.reduce((a, b) => a + b, 0) / dumbMoistures.length).toFixed(1) + '%' : '0%';
-        }
-
-        function createCharts() {
-            if (filteredData.length === 0) return;
-
-            // Moisture Chart - show samples to avoid overcrowding
-            const sampleSize = Math.max(1, Math.floor(filteredData.length / 100));
-            const sampledData = filteredData.filter((_, i) => i % sampleSize === 0);
-
-            const moistureCtx = document.getElementById('moistureChart').getContext('2d');
-            if (moistureChart) moistureChart.destroy();
-
-            moistureChart = new Chart(moistureCtx, {
-                type: 'line',
-                data: {
-                    labels: sampledData.map(d => d.timestamp.split(' ')[1]),
-                    datasets: [
-                        {
-                            label: 'Smart Sensor',
-                            data: sampledData.map(d => d.smartMoisture),
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Dumb Sensor',
-                            data: sampledData.map(d => d.dumbMoisture),
-                            borderColor: '#764ba2',
-                            backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
+                filteredData = allData.filter(row => {
+                    // Primary filter: Time Scrollback (only show data up to cutoff)
+                    if (row.timestampMs > cutoffTimeMs) {
+                        return false;
                     }
-                }
-            });
 
-            // Event Distribution Chart
-            const eventCounts = {};
-            filteredData.forEach(d => {
-                eventCounts[d.event] = (eventCounts[d.event] || 0) + 1;
-            });
-
-            const eventCtx = document.getElementById('eventChart').getContext('2d');
-            if (eventChart) eventChart.destroy();
-
-            eventChart = new Chart(eventCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(eventCounts),
-                    datasets: [{
-                        data: Object.values(eventCounts),
-                        backgroundColor: [
-                            '#667eea',
-                            '#764ba2',
-                            '#f093fb',
-                            '#4facfe'
-                        ],
-                        borderColor: 'white',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                        }
+                    // Secondary filter: Event Type
+                    if (eventFilter && !row.event.includes(eventFilter)) {
+                        return false;
                     }
+
+                    return true;
+                });
+
+                currentPage = 1;
+                updateStats();
+                createCharts();
+                displayTable();
+
+                // Update simulated "Live" time in the UI
+                const lastUpdateElem = document.getElementById('lastUpdate');
+                if (timeOffsetMinutes > 0) {
+                    lastUpdateElem.textContent = new Date(cutoffTimeMs).toLocaleTimeString() + ' (Simulated)';
+                } else {
+                    lastUpdateElem.textContent = new Date(latestTimeMs).toLocaleTimeString();
                 }
-            });
-        }
-
-        function applyFilters() {
-            if (allData.length === 0) return;
-
-            const eventFilter = document.getElementById('eventFilter').value;
-            const sliderValue = parseInt(document.getElementById('timeSlider').value);
-            timeOffsetMinutes = sliderValue;
-
-            const latestDataPoint = allData[allData.length - 1];
-            const latestTimeMs = latestDataPoint.timestampMs;
-            const cutoffTimeMs = latestTimeMs - (timeOffsetMinutes * 60 * 1000);
-
-            // Update label
-            const label = document.getElementById('timeOffsetLabel');
-            if (timeOffsetMinutes === 0) {
-                label.textContent = 'Live';
-                label.style.color = '#4CAF50';
-            } else {
-                label.textContent = `-${timeOffsetMinutes}m`;
-                label.style.color = '#FFC107';
             }
 
-            filteredData = allData.filter(row => {
-                // Primary filter: Time Scrollback (only show data up to cutoff)
-                if (row.timestampMs > cutoffTimeMs) {
-                    return false;
-                }
-
-                // Secondary filter: Event Type
-                if (eventFilter && !row.event.includes(eventFilter)) {
-                    return false;
-                }
-
-                return true;
-            });
-
-            currentPage = 1;
-            updateStats();
-            createCharts();
-            displayTable();
-
-            // Update simulated "Live" time in the UI
-            const lastUpdateElem = document.getElementById('lastUpdate');
-            if (timeOffsetMinutes > 0) {
-                lastUpdateElem.textContent = new Date(cutoffTimeMs).toLocaleTimeString() + ' (Simulated)';
-            } else {
-                lastUpdateElem.textContent = new Date(latestTimeMs).toLocaleTimeString();
+            function resetFilters() {
+                document.getElementById('eventFilter').value = '';
+                document.getElementById('timeSlider').value = 0;
+                applyFilters();
             }
-        }
 
-        function resetFilters() {
-            document.getElementById('eventFilter').value = '';
-            document.getElementById('timeSlider').value = 0;
-            applyFilters();
-        }
+            function displayTable() {
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+                const pageData = filteredData.slice(start, end);
 
-        function displayTable() {
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const pageData = filteredData.slice(start, end);
-
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = pageData.map(row => `
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = pageData.map(row => `
                 <tr>
                     <td>${row.timestamp}</td>
                     <td><strong>${row.smartMoisture.toFixed(2)}</strong></td>
@@ -949,217 +1091,218 @@
                 </tr>
             `).join('');
 
-            updatePagination();
-        }
+                updatePagination();
+            }
 
-        function getEventClass(event) {
-            if (event.includes('WATER')) return 'water';
-            if (event.includes('BOOT')) return 'boot';
-            return 'routine';
-        }
+            function getEventClass(event) {
+                if (event.includes('WATER')) return 'water';
+                if (event.includes('BOOT')) return 'boot';
+                return 'routine';
+            }
 
-        function updatePagination() {
-            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-            const pagination = document.getElementById('pagination');
+            function updatePagination() {
+                const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+                const pagination = document.getElementById('pagination');
 
-            let html = '';
-            for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-                html += `<button class="page-button ${i === currentPage ? 'active' : ''}" 
+                let html = '';
+                for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+                    html += `<button class="page-button ${i === currentPage ? 'active' : ''}" 
                     onclick="goToPage(${i})">${i}</button>`;
-            }
-
-            pagination.innerHTML = html;
-        }
-
-        function goToPage(page) {
-            currentPage = page;
-            displayTable();
-            window.scrollTo(0, 0);
-        }
-
-        function downloadData() {
-            if (allData.length === 0) {
-                alert('No data available to download');
-                return;
-            }
-
-            // Create CSV content
-            const headers = ['Timestamp', 'Smart Moisture', 'Dumb Moisture', 'Event', 'Reason', 'Water Used (L)'];
-            const rows = allData.map(d => [
-                d.timestamp,
-                d.smartMoisture.toFixed(2),
-                d.dumbMoisture.toFixed(2),
-                d.event,
-                d.reason || '',
-                d.waterUsed || ''
-            ]);
-
-            const csv = [
-                headers.join(','),
-                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-            ].join('\n');
-
-            // Create blob and download
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-
-            link.setAttribute('href', url);
-            link.setAttribute('download', `plant_data_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function updateLastRefreshTime() {
-            const now = new Date();
-            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
-        }
-
-        function setStatusDotReady() {
-            const dot = document.getElementById('statusDot');
-            dot.classList.remove('loading');
-            dot.style.background = '#4CAF50';
-        }
-
-        function setStatusDotLoading() {
-            const dot = document.getElementById('statusDot');
-            dot.classList.add('loading');
-            dot.style.background = '#ff9800';
-        }
-
-        function setStatusDotError() {
-            const dot = document.getElementById('statusDot');
-            dot.classList.remove('loading');
-            dot.style.background = '#f44336';
-        }
-
-        function toggleAutoRefresh() {
-            autoRefreshEnabled = !autoRefreshEnabled;
-            const toggle = document.getElementById('refreshToggle');
-
-            if (autoRefreshEnabled) {
-                toggle.classList.remove('inactive');
-                toggle.classList.add('active');
-                toggle.innerHTML = '<span class="refresh-icon">⚙️</span><span>Auto-Refresh ON</span>';
-                startAutoRefresh();
-            } else {
-                toggle.classList.remove('active');
-                toggle.classList.add('inactive');
-                toggle.innerHTML = '<span class="refresh-icon">⏸️</span><span>Auto-Refresh OFF</span>';
-                if (refreshInterval) {
-                    clearInterval(refreshInterval);
-                    refreshInterval = null;
                 }
-            }
-        }
 
-        function manualRefresh() {
-            const btn = document.getElementById('manualRefreshBtn');
-            btn.classList.add('refreshing');
-            setStatusDotLoading();
-
-            loadData().then(() => {
-                btn.classList.remove('refreshing');
-                setStatusDotReady();
-            }).catch(() => {
-                btn.classList.remove('refreshing');
-                setStatusDotError();
-            });
-        }
-
-        // Event listeners
-        document.getElementById('rowsPerPage').addEventListener('change', (e) => {
-            rowsPerPage = parseInt(e.target.value);
-            currentPage = 1;
-            displayTable();
-        });
-
-        document.getElementById('eventFilter').addEventListener('change', applyFilters);
-
-        // Refresh every 10 seconds
-        function startAutoRefresh() {
-            if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(() => {
-                setStatusDotLoading();
-                loadData();
-            }, 10000);
-        }
-
-        // Load data on page load
-        loadData();
-        startAutoRefresh();
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (refreshInterval) clearInterval(refreshInterval);
-        });
-
-        document.getElementById('dataSource').addEventListener('change', () => {
-            currentPage = 1;
-            loadData();
-        });
-
-        document.getElementById('timeSlider').addEventListener('input', applyFilters);
-
-        // Test Sensor Modal Functions
-        function openTestSensorModal() {
-            const modal = document.getElementById('testSensorModal');
-            modal.classList.add('show');
-            document.getElementById('testPasscodeInput').focus();
-            document.getElementById('testPasscodeInput').value = '';
-            document.getElementById('testOutput').classList.remove('show');
-            document.getElementById('testLoading').classList.remove('show');
-        }
-
-        function closeTestSensorModal() {
-            const modal = document.getElementById('testSensorModal');
-            modal.classList.remove('show');
-        }
-
-        async function runTestSensor() {
-            const passcode = document.getElementById('testPasscodeInput').value;
-            const output = document.getElementById('testOutput');
-            const loading = document.getElementById('testLoading');
-
-            if (!passcode) {
-                alert('Please enter the passcode');
-                return;
+                pagination.innerHTML = html;
             }
 
-            loading.classList.add('show');
-            output.classList.remove('show');
+            function goToPage(page) {
+                currentPage = page;
+                displayTable();
+                window.scrollTo(0, 0);
+            }
 
-            try {
-                const response = await fetch(`/api/test-sensors?passcode=${encodeURIComponent(passcode)}`);
-                const data = await response.json();
+            function downloadData() {
+                if (allData.length === 0) {
+                    alert('No data available to download');
+                    return;
+                }
 
-                loading.classList.remove('show');
+                // Create CSV content
+                const headers = ['Timestamp', 'Smart Moisture', 'Dumb Moisture', 'Event', 'Reason', 'Water Used (L)'];
+                const rows = allData.map(d => [
+                    d.timestamp,
+                    d.smartMoisture.toFixed(2),
+                    d.dumbMoisture.toFixed(2),
+                    d.event,
+                    d.reason || '',
+                    d.waterUsed || ''
+                ]);
 
-                if (data.success) {
-                    output.textContent = data.output;
-                    output.classList.add('show');
+                const csv = [
+                    headers.join(','),
+                    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+                ].join('\n');
+
+                // Create blob and download
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+
+                link.setAttribute('href', url);
+                link.setAttribute('download', `plant_data_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            function updateLastRefreshTime() {
+                const now = new Date();
+                document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+            }
+
+            function setStatusDotReady() {
+                const dot = document.getElementById('statusDot');
+                dot.classList.remove('loading');
+                dot.style.background = '#4CAF50';
+            }
+
+            function setStatusDotLoading() {
+                const dot = document.getElementById('statusDot');
+                dot.classList.add('loading');
+                dot.style.background = '#ff9800';
+            }
+
+            function setStatusDotError() {
+                const dot = document.getElementById('statusDot');
+                dot.classList.remove('loading');
+                dot.style.background = '#f44336';
+            }
+
+            function toggleAutoRefresh() {
+                autoRefreshEnabled = !autoRefreshEnabled;
+                const toggle = document.getElementById('refreshToggle');
+
+                if (autoRefreshEnabled) {
+                    toggle.classList.remove('inactive');
+                    toggle.classList.add('active');
+                    toggle.innerHTML = '<span class="refresh-icon">⚙️</span><span>Auto-Refresh ON</span>';
+                    startAutoRefresh();
                 } else {
-                    output.textContent = `Error: ${data.error}`;
+                    toggle.classList.remove('active');
+                    toggle.classList.add('inactive');
+                    toggle.innerHTML = '<span class="refresh-icon">⏸️</span><span>Auto-Refresh OFF</span>';
+                    if (refreshInterval) {
+                        clearInterval(refreshInterval);
+                        refreshInterval = null;
+                    }
+                }
+            }
+
+            function manualRefresh() {
+                const btn = document.getElementById('manualRefreshBtn');
+                btn.classList.add('refreshing');
+                setStatusDotLoading();
+
+                loadData().then(() => {
+                    btn.classList.remove('refreshing');
+                    setStatusDotReady();
+                }).catch(() => {
+                    btn.classList.remove('refreshing');
+                    setStatusDotError();
+                });
+            }
+
+            // Event listeners
+            document.getElementById('rowsPerPage').addEventListener('change', (e) => {
+                rowsPerPage = parseInt(e.target.value);
+                currentPage = 1;
+                displayTable();
+            });
+
+            document.getElementById('eventFilter').addEventListener('change', applyFilters);
+
+            // Refresh every 10 seconds
+            function startAutoRefresh() {
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => {
+                    setStatusDotLoading();
+                    loadData();
+                }, 10000);
+            }
+
+            // Load data on page load
+            loadData();
+            startAutoRefresh();
+
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (refreshInterval) clearInterval(refreshInterval);
+            });
+
+            document.getElementById('dataSource').addEventListener('change', () => {
+                currentPage = 1;
+                loadData();
+            });
+
+            document.getElementById('chartLibrary').addEventListener('change', createCharts);
+            document.getElementById('timeSlider').addEventListener('input', applyFilters);
+
+            // Test Sensor Modal Functions
+            function openTestSensorModal() {
+                const modal = document.getElementById('testSensorModal');
+                modal.classList.add('show');
+                document.getElementById('testPasscodeInput').focus();
+                document.getElementById('testPasscodeInput').value = '';
+                document.getElementById('testOutput').classList.remove('show');
+                document.getElementById('testLoading').classList.remove('show');
+            }
+
+            function closeTestSensorModal() {
+                const modal = document.getElementById('testSensorModal');
+                modal.classList.remove('show');
+            }
+
+            async function runTestSensor() {
+                const passcode = document.getElementById('testPasscodeInput').value;
+                const output = document.getElementById('testOutput');
+                const loading = document.getElementById('testLoading');
+
+                if (!passcode) {
+                    alert('Please enter the passcode');
+                    return;
+                }
+
+                loading.classList.add('show');
+                output.classList.remove('show');
+
+                try {
+                    const response = await fetch(`/api/test-sensors?passcode=${encodeURIComponent(passcode)}`);
+                    const data = await response.json();
+
+                    loading.classList.remove('show');
+
+                    if (data.success) {
+                        output.textContent = data.output;
+                        output.classList.add('show');
+                    } else {
+                        output.textContent = `Error: ${data.error}`;
+                        output.classList.add('show');
+                    }
+                } catch (error) {
+                    loading.classList.remove('show');
+                    output.textContent = `Connection Error: ${error.message}`;
                     output.classList.add('show');
                 }
-            } catch (error) {
-                loading.classList.remove('show');
-                output.textContent = `Connection Error: ${error.message}`;
-                output.classList.add('show');
             }
-        }
 
-        // Close modal when clicking outside
-        window.addEventListener('click', (e) => {
-            const modal = document.getElementById('testSensorModal');
-            if (e.target === modal) {
-                closeTestSensorModal();
-            }
-        });
-    </script>
-</body>
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('testSensorModal');
+                if (e.target === modal) {
+                    closeTestSensorModal();
+                }
+            });
+        </script>
+    </body>
 
 </html>
